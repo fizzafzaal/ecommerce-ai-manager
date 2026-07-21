@@ -109,13 +109,17 @@ def seed_products_and_inventory(db):
 
 def seed_orders(db, customers, products):
     orders = []
-    for _ in range(NUM_ORDERS):
+    for i in range(NUM_ORDERS):
         customer = random.choice(customers)
         product = random.choice(products)
         quantity = random.randint(1, 3)
-        # Spread order dates over the last 60 days so some orders fall
-        # outside the refund policy's 30-day window and some don't.
-        days_ago = random.randint(0, 60)
+        # Deterministic split so we always have both buckets for demos:
+        # the first ~60% of orders fall inside the 30-day refund window
+        # (eligible), the rest fall outside it (rejected as out-of-window).
+        if i < int(NUM_ORDERS * 0.6):
+            days_ago = random.randint(1, 28)
+        else:
+            days_ago = random.randint(31, 60)
         order = Order(
             customer_id=customer.id,
             product_id=product.id,
@@ -130,12 +134,20 @@ def seed_orders(db, customers, products):
     return orders
 
 
+ELIGIBLE_BUFFER = 5  # eligible orders left un-refunded, for live refund demos
+
+
 def seed_refunds(db, orders):
     # Only orders within 30 days are realistic candidates for an already-
     # approved refund; older ones would violate the eligibility rule the
     # Refund Agent enforces.
     eligible_orders = [o for o in orders if (datetime.utcnow() - o.order_date).days <= 30]
-    sample_size = min(NUM_REFUNDS, len(eligible_orders))
+    # Leave a buffer of eligible orders un-refunded so a live demo always
+    # has completed, in-window orders that will actually get approved --
+    # otherwise refunds would consume every eligible order and every demo
+    # refund would be rejected as already-refunded or out-of-window.
+    refundable = max(0, len(eligible_orders) - ELIGIBLE_BUFFER)
+    sample_size = min(NUM_REFUNDS, refundable)
     chosen_orders = random.sample(eligible_orders, sample_size)
 
     for order in chosen_orders:
@@ -148,6 +160,8 @@ def seed_refunds(db, orders):
             )
         )
         order.status = "refunded"
+
+    return len(chosen_orders)
 
 
 def already_seeded(db) -> bool:
@@ -170,12 +184,12 @@ def run_seed(force: bool = False):
         customers = seed_customers(db)
         products = seed_products_and_inventory(db)
         orders = seed_orders(db, customers, products)
-        seed_refunds(db, orders)
+        num_refunds = seed_refunds(db, orders)
         db.commit()
 
         print(
             f"Seeded {len(customers)} customers, {len(products)} products, "
-            f"{len(orders)} orders, {NUM_REFUNDS} refunds."
+            f"{len(orders)} orders, {num_refunds} refunds."
         )
     finally:
         db.close()
