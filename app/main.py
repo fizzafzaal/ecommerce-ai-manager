@@ -12,8 +12,10 @@ Interactive docs are then at http://localhost:8000/docs
 from fastapi import FastAPI, HTTPException
 from loguru import logger
 
+from app.database import SessionLocal
+from app.models import Customer
 from app.orchestrator import Orchestrator
-from app.schemas import ChatRequest, ChatResponse, HealthResponse
+from app.schemas import ChatRequest, ChatResponse, CustomerSummary, HealthResponse
 
 app = FastAPI(
     title="E-Commerce AI Manager",
@@ -30,6 +32,17 @@ orchestrator = Orchestrator()
 def health() -> HealthResponse:
     """Liveness check -- confirms the API process is up."""
     return HealthResponse(status="ok")
+
+
+@app.get("/customers", response_model=list[CustomerSummary])
+def list_customers() -> list[CustomerSummary]:
+    """Return all customers, so the UI can offer a real customer picker."""
+    db = SessionLocal()
+    try:
+        customers = db.query(Customer).order_by(Customer.id).all()
+        return [CustomerSummary(id=c.id, name=c.name) for c in customers]
+    finally:
+        db.close()
 
 
 @app.post("/chat", response_model=ChatResponse)

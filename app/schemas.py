@@ -22,3 +22,9 @@ class ChatResponse(BaseModel):
 
 class HealthResponse(BaseModel):
     status: str
+
+
+class CustomerSummary(BaseModel):
+    id: int
+    name: str
+
