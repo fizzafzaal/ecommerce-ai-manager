@@ -47,7 +47,11 @@ INTENT_PROMPT = (
 
 class SupportAgent(BaseAgent):
     name = "support_agent"
-    timeout_seconds = 20.0
+    # Must stay above the intent call's own timeout (below) so the base
+    # agent never kills the LLM call mid-flight -- we want a slow LLM to
+    # fall back to keywords, not to blow up the whole agent.
+    timeout_seconds = 30.0
+    intent_llm_timeout = 20
 
     def process(self, message: str) -> dict:
         faq_answer = self._match_faq(message)
@@ -76,7 +80,11 @@ class SupportAgent(BaseAgent):
         keyword fallback)."""
         # Only a handful of tokens are needed for a one-word classification,
         # which also keeps this call faster than a full 256-token reply.
-        reply = ask_llm(INTENT_PROMPT.format(message=message), max_tokens=10)
+        reply = ask_llm(
+            INTENT_PROMPT.format(message=message),
+            max_tokens=10,
+            timeout=self.intent_llm_timeout,
+        )
         first_word = reply.strip().lower().split()[0].strip(".,!\"'") if reply.strip() else ""
         return first_word if first_word in LLM_ACCEPTABLE_INTENTS else None
 
