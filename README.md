@@ -115,6 +115,14 @@ Everything is free, open-source, and CPU-only.
 
 ## Running it
 
+### Easiest: one-click launcher (Windows)
+
+Double-click **`run_demo.bat`**. It starts Ollama if needed, pre-warms the
+model so the first reply is fast, launches the backend and the chat UI, and
+opens your browser. To shut everything down, double-click **`stop_demo.bat`**.
+
+### Manual (two terminals)
+
 You need **two terminals** (both with the venv activated), and Ollama running.
 
 **Terminal 1 — the backend API:**
@@ -128,6 +136,11 @@ Interactive API docs are then at http://localhost:8000/docs
 streamlit run frontend/chat_app.py
 ```
 Then open http://localhost:8501, pick a customer, and start chatting.
+
+**Tip:** pre-warm the model first so your first reply isn't a slow cold start:
+```bash
+python -m app.warmup
+```
 
 ### Things to try
 Pick **customer #1** in the sidebar, then send:
@@ -145,6 +158,21 @@ pytest -q
 ```
 The tests avoid the LLM (so they're fast and repeatable) and clean up after
 themselves, so they never disturb the seeded demo data.
+
+---
+
+## Safe mode (low-memory fallback)
+
+If you ever need to run with minimal memory — or Ollama isn't available — set
+`USE_LLM=false` in `.env`. The system then skips the language model entirely:
+
+- **Unchanged:** refund decisions, product search, stock, and FAQ answers —
+  none of these ever used the LLM.
+- **Simpler:** intent detection uses keyword matching, and replies use plain
+  (still correct) wording instead of the LLM-written friendly opener.
+
+This drops peak memory from ~6.8GB to ~4.5GB. It's a fallback — the default is
+full quality (`USE_LLM=true`).
 
 ---
 

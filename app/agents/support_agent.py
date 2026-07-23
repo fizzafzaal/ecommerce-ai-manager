@@ -10,6 +10,7 @@ anything.
 import re
 
 from app.agents.base_agent import BaseAgent
+from app.config import settings
 from app.llm import ask_llm
 
 VALID_INTENTS = {"refund", "product_search", "faq", "unknown"}
@@ -58,7 +59,9 @@ class SupportAgent(BaseAgent):
         if faq_answer:
             return {"intent": "faq", "answer": faq_answer, "entities": {}, "method": "keyword"}
 
-        intent = self._detect_intent_via_llm(message)
+        # In safe mode the LLM is skipped entirely and we go straight to
+        # keyword matching.
+        intent = self._detect_intent_via_llm(message) if settings.use_llm else None
         if intent is not None:
             method = "llm"
         else:

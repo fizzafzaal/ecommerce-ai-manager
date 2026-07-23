@@ -18,6 +18,7 @@ from loguru import logger
 from app.agents.product_agent import ProductAgent
 from app.agents.refund_agent import RefundAgent
 from app.agents.support_agent import KEYWORD_INTENT_MAP, SupportAgent
+from app.config import settings
 from app.llm import FALLBACK_MESSAGE, ask_llm
 
 REFUND_KEYWORDS = KEYWORD_INTENT_MAP["refund"]
@@ -134,7 +135,10 @@ class Orchestrator:
 
     def _friendly_intro(self, agent_outputs: dict) -> str:
         """One friendly opening line from the LLM. Returns '' on any
-        failure so the factual reply can stand on its own."""
+        failure -- or when the LLM is disabled (safe mode) -- so the
+        factual reply can stand on its own."""
+        if not settings.use_llm:
+            return ""
         situation = self._describe_situation(agent_outputs)
         intro = ask_llm(INTRO_PROMPT.format(situation=situation), max_tokens=40)
         if not intro or intro == FALLBACK_MESSAGE:
