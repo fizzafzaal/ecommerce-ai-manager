@@ -18,7 +18,7 @@ from app.agents.product_agent import ProductAgent
 from app.agents.refund_agent import RefundAgent
 from app.agents.support_agent import SupportAgent
 from app.database import SessionLocal
-from app.models import Customer, Inventory, Order, Product, Refund
+from app.models import Customer, Inventory, Order, OrderItem, Product, Refund
 
 
 # --- Support Agent: deterministic intent + entity extraction ---
@@ -87,11 +87,10 @@ def test_refund_approved_for_eligible_order(refund_agent):
     db.flush()
     order = Order(
         customer_id=customer.id,
-        product_id=product.id,
-        quantity=1,
         total_amount=20.0,
         status="completed",
         order_date=datetime.utcnow() - timedelta(days=5),  # inside the 30-day window
+        items=[OrderItem(product_id=product.id, quantity=1, unit_price=20.0)],
     )
     db.add(order)
     db.commit()
@@ -105,6 +104,7 @@ def test_refund_approved_for_eligible_order(refund_agent):
     finally:
         db = SessionLocal()
         db.query(Refund).filter(Refund.order_id == order_id).delete()
+        db.query(OrderItem).filter(OrderItem.order_id == order_id).delete()
         db.query(Order).filter(Order.id == order_id).delete()
         db.query(Product).filter(Product.id == product_id).delete()
         db.query(Customer).filter(Customer.id == customer_id).delete()
@@ -121,11 +121,10 @@ def test_refund_rejects_out_of_window_order(refund_agent):
     db.flush()
     order = Order(
         customer_id=customer.id,
-        product_id=product.id,
-        quantity=1,
         total_amount=15.0,
         status="completed",
         order_date=datetime.utcnow() - timedelta(days=45),  # outside the window
+        items=[OrderItem(product_id=product.id, quantity=1, unit_price=15.0)],
     )
     db.add(order)
     db.commit()
@@ -138,6 +137,7 @@ def test_refund_rejects_out_of_window_order(refund_agent):
         assert result["reason"] == "outside_refund_window"
     finally:
         db = SessionLocal()
+        db.query(OrderItem).filter(OrderItem.order_id == order_id).delete()
         db.query(Order).filter(Order.id == order_id).delete()
         db.query(Product).filter(Product.id == product_id).delete()
         db.query(Customer).filter(Customer.id == customer_id).delete()

@@ -12,7 +12,17 @@ from datetime import datetime, timedelta
 from faker import Faker
 
 from app.database import Base, SessionLocal, engine
-from app.models import Conversation, Customer, Inventory, Message, Order, Product, Refund
+from app.models import (
+    CartItem,
+    Conversation,
+    Customer,
+    Inventory,
+    Message,
+    Order,
+    OrderItem,
+    Product,
+    Refund,
+)
 
 fake = Faker()
 
@@ -111,8 +121,6 @@ def seed_orders(db, customers, products):
     orders = []
     for i in range(NUM_ORDERS):
         customer = random.choice(customers)
-        product = random.choice(products)
-        quantity = random.randint(1, 3)
         # Deterministic split so we always have both buckets for demos:
         # the first ~60% of orders fall inside the 30-day refund window
         # (eligible), the rest fall outside it (rejected as out-of-window).
@@ -120,13 +128,26 @@ def seed_orders(db, customers, products):
             days_ago = random.randint(1, 28)
         else:
             days_ago = random.randint(31, 60)
+
+        # Most orders are single-item; some have two distinct products, so
+        # the new multi-item order model has real examples to show.
+        line_products = random.sample(products, random.randint(1, 2))
+        items = [
+            OrderItem(
+                product_id=p.id,
+                quantity=random.randint(1, 3),
+                unit_price=p.price,
+            )
+            for p in line_products
+        ]
+        total = round(sum(item.unit_price * item.quantity for item in items), 2)
+
         order = Order(
             customer_id=customer.id,
-            product_id=product.id,
-            quantity=quantity,
-            total_amount=round(product.price * quantity, 2),
+            total_amount=total,
             status="completed",
             order_date=datetime.utcnow() - timedelta(days=days_ago),
+            items=items,
         )
         db.add(order)
         orders.append(order)
@@ -177,7 +198,18 @@ def run_seed(force: bool = False):
             return
 
         if force:
-            for model in (Message, Conversation, Refund, Order, Inventory, Product, Customer):
+            # Delete child tables before their parents to respect foreign keys.
+            for model in (
+                Message,
+                Conversation,
+                Refund,
+                OrderItem,
+                Order,
+                CartItem,
+                Inventory,
+                Product,
+                Customer,
+            ):
                 db.query(model).delete()
             db.commit()
 
