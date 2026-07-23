@@ -32,52 +32,55 @@ NUM_REFUNDS = 8
 
 # Curated product catalog (not random Faker words) so the Product Agent's
 # semantic search later has real names/descriptions worth embedding.
+# Each product carries an `img` keyword used to build a stock-photo URL
+# (see seed_products_and_inventory) so the storefront shows realistic
+# images. The frontend falls back to an emoji tile if an image fails.
 PRODUCTS = [
     # Clothing
-    {"name": "Men's Warm Puffer Jacket", "description": "Insulated winter jacket with water-resistant shell, ideal for cold weather.", "category": "Clothing", "price": 89.99},
-    {"name": "Women's Fleece-Lined Winter Coat", "description": "Long fleece-lined coat that keeps you warm in freezing temperatures.", "category": "Clothing", "price": 109.99},
-    {"name": "Unisex Wool Beanie", "description": "Soft wool beanie for extra warmth on cold days.", "category": "Clothing", "price": 14.99},
-    {"name": "Men's Slim Fit Jeans", "description": "Classic slim fit denim jeans, machine washable.", "category": "Clothing", "price": 39.99},
-    {"name": "Women's Summer Floral Dress", "description": "Lightweight floral dress, perfect for warm summer days.", "category": "Clothing", "price": 34.99},
-    {"name": "Men's Cotton T-Shirt (3-Pack)", "description": "Breathable cotton t-shirts in classic colors.", "category": "Clothing", "price": 19.99},
-    {"name": "Waterproof Rain Jacket", "description": "Lightweight waterproof jacket, packable for travel.", "category": "Clothing", "price": 59.99},
-    {"name": "Thermal Base Layer Set", "description": "Moisture-wicking thermal top and bottom for cold outdoor activities.", "category": "Clothing", "price": 44.99},
+    {"name": "Men's Warm Puffer Jacket", "description": "Insulated winter jacket with water-resistant shell, ideal for cold weather.", "category": "Clothing", "price": 89.99, "img": "jacket"},
+    {"name": "Women's Fleece-Lined Winter Coat", "description": "Long fleece-lined coat that keeps you warm in freezing temperatures.", "category": "Clothing", "price": 109.99, "img": "coat"},
+    {"name": "Unisex Wool Beanie", "description": "Soft wool beanie for extra warmth on cold days.", "category": "Clothing", "price": 14.99, "img": "beanie"},
+    {"name": "Men's Slim Fit Jeans", "description": "Classic slim fit denim jeans, machine washable.", "category": "Clothing", "price": 39.99, "img": "jeans"},
+    {"name": "Women's Summer Floral Dress", "description": "Lightweight floral dress, perfect for warm summer days.", "category": "Clothing", "price": 34.99, "img": "dress"},
+    {"name": "Men's Cotton T-Shirt (3-Pack)", "description": "Breathable cotton t-shirts in classic colors.", "category": "Clothing", "price": 19.99, "img": "tshirt"},
+    {"name": "Waterproof Rain Jacket", "description": "Lightweight waterproof jacket, packable for travel.", "category": "Clothing", "price": 59.99, "img": "raincoat"},
+    {"name": "Thermal Base Layer Set", "description": "Moisture-wicking thermal top and bottom for cold outdoor activities.", "category": "Clothing", "price": 44.99, "img": "activewear"},
     # Electronics
-    {"name": "Wireless Bluetooth Headphones", "description": "Over-ear noise-cancelling headphones with 30-hour battery life.", "category": "Electronics", "price": 79.99},
-    {"name": "Smartphone Fast Charger (USB-C)", "description": "25W fast charging adapter compatible with most modern phones.", "category": "Electronics", "price": 17.99},
-    {"name": "Portable Bluetooth Speaker", "description": "Compact waterproof speaker with deep bass and 12-hour battery.", "category": "Electronics", "price": 45.99},
-    {"name": "4K Webcam", "description": "USB webcam with autofocus, ideal for video calls and streaming.", "category": "Electronics", "price": 54.99},
-    {"name": "Mechanical Gaming Keyboard", "description": "RGB backlit mechanical keyboard with tactile switches.", "category": "Electronics", "price": 69.99},
-    {"name": "Wireless Ergonomic Mouse", "description": "Comfortable wireless mouse with adjustable DPI settings.", "category": "Electronics", "price": 24.99},
-    {"name": "Smartwatch Fitness Tracker", "description": "Tracks steps, heart rate, and sleep with a 7-day battery life.", "category": "Electronics", "price": 99.99},
-    {"name": "Portable Power Bank 20000mAh", "description": "High-capacity power bank with dual USB output ports.", "category": "Electronics", "price": 29.99},
+    {"name": "Wireless Bluetooth Headphones", "description": "Over-ear noise-cancelling headphones with 30-hour battery life.", "category": "Electronics", "price": 79.99, "img": "headphones"},
+    {"name": "Smartphone Fast Charger (USB-C)", "description": "25W fast charging adapter compatible with most modern phones.", "category": "Electronics", "price": 17.99, "img": "charger"},
+    {"name": "Portable Bluetooth Speaker", "description": "Compact waterproof speaker with deep bass and 12-hour battery.", "category": "Electronics", "price": 45.99, "img": "speaker"},
+    {"name": "4K Webcam", "description": "USB webcam with autofocus, ideal for video calls and streaming.", "category": "Electronics", "price": 54.99, "img": "webcam"},
+    {"name": "Mechanical Gaming Keyboard", "description": "RGB backlit mechanical keyboard with tactile switches.", "category": "Electronics", "price": 69.99, "img": "keyboard"},
+    {"name": "Wireless Ergonomic Mouse", "description": "Comfortable wireless mouse with adjustable DPI settings.", "category": "Electronics", "price": 24.99, "img": "mouse"},
+    {"name": "Smartwatch Fitness Tracker", "description": "Tracks steps, heart rate, and sleep with a 7-day battery life.", "category": "Electronics", "price": 99.99, "img": "smartwatch"},
+    {"name": "Portable Power Bank 20000mAh", "description": "High-capacity power bank with dual USB output ports.", "category": "Electronics", "price": 29.99, "img": "powerbank"},
     # Home & Kitchen
-    {"name": "Stainless Steel Electric Kettle", "description": "1.7L kettle with auto shut-off and boil-dry protection.", "category": "Home & Kitchen", "price": 32.99},
-    {"name": "Non-Stick Frying Pan Set", "description": "3-piece non-stick frying pan set, dishwasher safe.", "category": "Home & Kitchen", "price": 42.99},
-    {"name": "Memory Foam Pillow", "description": "Contour memory foam pillow for neck and shoulder support.", "category": "Home & Kitchen", "price": 27.99},
-    {"name": "Cozy Fleece Throw Blanket", "description": "Extra-warm fleece blanket, machine washable, great for winter nights.", "category": "Home & Kitchen", "price": 22.99},
-    {"name": "Ceramic Coffee Mug Set (4-Pack)", "description": "Set of 4 ceramic mugs, microwave and dishwasher safe.", "category": "Home & Kitchen", "price": 19.99},
-    {"name": "Robot Vacuum Cleaner", "description": "Automatic robot vacuum with smart navigation and app control.", "category": "Home & Kitchen", "price": 179.99},
-    {"name": "Air Fryer 5.5L", "description": "Large capacity air fryer for healthier oil-free cooking.", "category": "Home & Kitchen", "price": 74.99},
-    {"name": "Digital Kitchen Scale", "description": "Precise digital scale for baking and cooking measurements.", "category": "Home & Kitchen", "price": 15.99},
+    {"name": "Stainless Steel Electric Kettle", "description": "1.7L kettle with auto shut-off and boil-dry protection.", "category": "Home & Kitchen", "price": 32.99, "img": "kettle"},
+    {"name": "Non-Stick Frying Pan Set", "description": "3-piece non-stick frying pan set, dishwasher safe.", "category": "Home & Kitchen", "price": 42.99, "img": "cookware"},
+    {"name": "Memory Foam Pillow", "description": "Contour memory foam pillow for neck and shoulder support.", "category": "Home & Kitchen", "price": 27.99, "img": "pillow"},
+    {"name": "Cozy Fleece Throw Blanket", "description": "Extra-warm fleece blanket, machine washable, great for winter nights.", "category": "Home & Kitchen", "price": 22.99, "img": "blanket"},
+    {"name": "Ceramic Coffee Mug Set (4-Pack)", "description": "Set of 4 ceramic mugs, microwave and dishwasher safe.", "category": "Home & Kitchen", "price": 19.99, "img": "mug"},
+    {"name": "Robot Vacuum Cleaner", "description": "Automatic robot vacuum with smart navigation and app control.", "category": "Home & Kitchen", "price": 179.99, "img": "vacuum"},
+    {"name": "Air Fryer 5.5L", "description": "Large capacity air fryer for healthier oil-free cooking.", "category": "Home & Kitchen", "price": 74.99, "img": "fryer"},
+    {"name": "Digital Kitchen Scale", "description": "Precise digital scale for baking and cooking measurements.", "category": "Home & Kitchen", "price": 15.99, "img": "scale"},
     # Sports & Outdoors
-    {"name": "Yoga Mat with Carrying Strap", "description": "Non-slip yoga mat, extra thick for comfort.", "category": "Sports & Outdoors", "price": 24.99},
-    {"name": "Adjustable Dumbbell Set", "description": "Space-saving adjustable dumbbells, 5 to 25 lbs per hand.", "category": "Sports & Outdoors", "price": 129.99},
-    {"name": "Insulated Water Bottle", "description": "Keeps drinks cold for 24 hours or hot for 12 hours.", "category": "Sports & Outdoors", "price": 18.99},
-    {"name": "Camping Tent (2-Person)", "description": "Waterproof lightweight tent, easy to set up for camping trips.", "category": "Sports & Outdoors", "price": 89.99},
-    {"name": "Hiking Backpack 40L", "description": "Durable hiking backpack with multiple compartments and rain cover.", "category": "Sports & Outdoors", "price": 64.99},
-    {"name": "Resistance Bands Set", "description": "5 resistance bands of varying strength for home workouts.", "category": "Sports & Outdoors", "price": 16.99},
-    {"name": "Running Shoes", "description": "Lightweight breathable running shoes with cushioned sole.", "category": "Sports & Outdoors", "price": 79.99},
-    {"name": "Winter Ski Gloves", "description": "Waterproof insulated gloves for skiing and cold outdoor activities.", "category": "Sports & Outdoors", "price": 29.99},
+    {"name": "Yoga Mat with Carrying Strap", "description": "Non-slip yoga mat, extra thick for comfort.", "category": "Sports & Outdoors", "price": 24.99, "img": "yoga"},
+    {"name": "Adjustable Dumbbell Set", "description": "Space-saving adjustable dumbbells, 5 to 25 lbs per hand.", "category": "Sports & Outdoors", "price": 129.99, "img": "dumbbell"},
+    {"name": "Insulated Water Bottle", "description": "Keeps drinks cold for 24 hours or hot for 12 hours.", "category": "Sports & Outdoors", "price": 18.99, "img": "waterbottle"},
+    {"name": "Camping Tent (2-Person)", "description": "Waterproof lightweight tent, easy to set up for camping trips.", "category": "Sports & Outdoors", "price": 89.99, "img": "tent"},
+    {"name": "Hiking Backpack 40L", "description": "Durable hiking backpack with multiple compartments and rain cover.", "category": "Sports & Outdoors", "price": 64.99, "img": "backpack"},
+    {"name": "Resistance Bands Set", "description": "5 resistance bands of varying strength for home workouts.", "category": "Sports & Outdoors", "price": 16.99, "img": "fitness"},
+    {"name": "Running Shoes", "description": "Lightweight breathable running shoes with cushioned sole.", "category": "Sports & Outdoors", "price": 79.99, "img": "sneakers"},
+    {"name": "Winter Ski Gloves", "description": "Waterproof insulated gloves for skiing and cold outdoor activities.", "category": "Sports & Outdoors", "price": 29.99, "img": "gloves"},
     # Beauty & Personal Care
-    {"name": "Electric Toothbrush", "description": "Rechargeable toothbrush with 3 cleaning modes.", "category": "Beauty & Personal Care", "price": 34.99},
-    {"name": "Hair Dryer with Diffuser", "description": "Fast-drying hair dryer with multiple heat settings.", "category": "Beauty & Personal Care", "price": 39.99},
-    {"name": "Facial Cleansing Brush", "description": "Silicone facial brush for gentle daily cleansing.", "category": "Beauty & Personal Care", "price": 21.99},
-    {"name": "Moisturizing Face Cream", "description": "Daily face cream with SPF for hydrated, protected skin.", "category": "Beauty & Personal Care", "price": 16.99},
-    {"name": "Nail Care Kit", "description": "Complete manicure and pedicure kit with case.", "category": "Beauty & Personal Care", "price": 12.99},
-    {"name": "Electric Shaver", "description": "Cordless rechargeable shaver for a smooth, close shave.", "category": "Beauty & Personal Care", "price": 44.99},
-    {"name": "Aromatherapy Essential Oil Set", "description": "6 essential oils for relaxation and diffuser use.", "category": "Beauty & Personal Care", "price": 23.99},
-    {"name": "Bluetooth Hair Straightener Brush", "description": "Ceramic straightening brush for smooth, frizz-free hair.", "category": "Beauty & Personal Care", "price": 27.99},
+    {"name": "Electric Toothbrush", "description": "Rechargeable toothbrush with 3 cleaning modes.", "category": "Beauty & Personal Care", "price": 34.99, "img": "toothbrush"},
+    {"name": "Hair Dryer with Diffuser", "description": "Fast-drying hair dryer with multiple heat settings.", "category": "Beauty & Personal Care", "price": 39.99, "img": "hairdryer"},
+    {"name": "Facial Cleansing Brush", "description": "Silicone facial brush for gentle daily cleansing.", "category": "Beauty & Personal Care", "price": 21.99, "img": "skincare"},
+    {"name": "Moisturizing Face Cream", "description": "Daily face cream with SPF for hydrated, protected skin.", "category": "Beauty & Personal Care", "price": 16.99, "img": "cosmetics"},
+    {"name": "Nail Care Kit", "description": "Complete manicure and pedicure kit with case.", "category": "Beauty & Personal Care", "price": 12.99, "img": "manicure"},
+    {"name": "Electric Shaver", "description": "Cordless rechargeable shaver for a smooth, close shave.", "category": "Beauty & Personal Care", "price": 44.99, "img": "razor"},
+    {"name": "Aromatherapy Essential Oil Set", "description": "6 essential oils for relaxation and diffuser use.", "category": "Beauty & Personal Care", "price": 23.99, "img": "aromatherapy"},
+    {"name": "Bluetooth Hair Straightener Brush", "description": "Ceramic straightening brush for smooth, frizz-free hair.", "category": "Beauty & Personal Care", "price": 27.99, "img": "haircare"},
 ]
 
 
@@ -93,12 +96,17 @@ def seed_customers(db):
 
 def seed_products_and_inventory(db):
     products = []
-    for item in PRODUCTS:
+    for i, item in enumerate(PRODUCTS, start=1):
+        # A keyword-based stock photo, locked to a stable image per product
+        # so it doesn't change on every page load. The frontend falls back
+        # to an emoji tile if the image can't be loaded (e.g. offline).
+        image_url = f"https://loremflickr.com/600/400/{item['img']}?lock={i}"
         product = Product(
             name=item["name"],
             description=item["description"],
             category=item["category"],
             price=item["price"],
+            image_url=image_url,
         )
         db.add(product)
         products.append(product)

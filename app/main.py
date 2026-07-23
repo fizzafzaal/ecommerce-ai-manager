@@ -27,10 +27,12 @@ from app.schemas import (
     ChatResponse,
     CustomerSummary,
     HealthResponse,
+    LoginRequest,
     OrderCreate,
     OrderItemOut,
     OrderOut,
     ProductOut,
+    SignupRequest,
 )
 
 app = FastAPI(
@@ -76,6 +78,41 @@ def list_customers() -> list[CustomerSummary]:
         db.close()
 
 
+@app.post("/signup", response_model=CustomerSummary, status_code=201)
+def signup(req: SignupRequest) -> CustomerSummary:
+    """Register a new customer. Actually creates a customer row; the
+    password is ignored (login is intentionally fake -- see EXTENSION.md).
+    Rejects an email that's already registered."""
+    db = SessionLocal()
+    try:
+        email = req.email.strip().lower()
+        existing = db.query(Customer).filter(Customer.email == email).first()
+        if existing:
+            raise HTTPException(status_code=409, detail="That email is already registered.")
+        customer = Customer(name=req.name.strip(), email=email)
+        db.add(customer)
+        db.commit()
+        db.refresh(customer)
+        return CustomerSummary(id=customer.id, name=customer.name)
+    finally:
+        db.close()
+
+
+@app.post("/login", response_model=CustomerSummary)
+def login(req: LoginRequest) -> CustomerSummary:
+    """Log in by email only (no password check). Returns the matching
+    customer, or 404 if no account has that email."""
+    db = SessionLocal()
+    try:
+        email = req.email.strip().lower()
+        customer = db.query(Customer).filter(Customer.email == email).first()
+        if customer is None:
+            raise HTTPException(status_code=404, detail="No account found with that email.")
+        return CustomerSummary(id=customer.id, name=customer.name)
+    finally:
+        db.close()
+
+
 def _to_product_out(product: Product) -> ProductOut:
     """Build the API view of a product, joining in its live stock level."""
     stock = product.inventory.stock_quantity if product.inventory else 0
@@ -87,6 +124,7 @@ def _to_product_out(product: Product) -> ProductOut:
         price=product.price,
         stock=stock,
         low_stock=stock < LOW_STOCK_THRESHOLD,
+        image_url=product.image_url,
     )
 
 

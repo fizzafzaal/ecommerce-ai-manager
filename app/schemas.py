@@ -41,6 +41,21 @@ class ProductOut(BaseModel):
     price: float
     stock: int
     low_stock: bool
+    image_url: str | None = None
+
+
+class SignupRequest(BaseModel):
+    """Create a new customer. Password is accepted for realism but never
+    stored or checked (login is intentionally fake)."""
+
+    name: str = Field(..., min_length=1, max_length=100)
+    email: str = Field(..., min_length=3, max_length=100)
+    password: str | None = None
+
+
+class LoginRequest(BaseModel):
+    email: str = Field(..., min_length=3, max_length=100)
+    password: str | None = None
 
 
 class CartItemAdd(BaseModel):

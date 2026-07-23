@@ -33,6 +33,7 @@ class Product(Base):
     description: Mapped[str] = mapped_column(String(500))
     category: Mapped[str] = mapped_column(String(50))
     price: Mapped[float]
+    image_url: Mapped[str | None] = mapped_column(String(300), nullable=True)
 
     inventory: Mapped["Inventory"] = relationship(back_populates="product", uselist=False)
     order_items: Mapped[list["OrderItem"]] = relationship(back_populates="product")

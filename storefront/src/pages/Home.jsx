@@ -2,9 +2,9 @@
 // links to the product page and can add the item to the cart.
 
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { getCategories, getProducts } from "../api";
-import { categoryVisual } from "../categoryVisual";
+import ProductImage from "../components/ProductImage";
 import { useCart } from "../context/CartContext";
 import { useCustomer } from "../context/CustomerContext";
 
@@ -15,6 +15,7 @@ function Home() {
   const [loading, setLoading] = useState(true);
   const { addItem } = useCart();
   const { customer } = useCustomer();
+  const navigate = useNavigate();
 
   // Categories load once.
   useEffect(() => {
@@ -59,33 +60,32 @@ function Home() {
         <p>Loading products...</p>
       ) : (
         <div className="product-grid">
-          {products.map((p) => {
-            const visual = categoryVisual(p.category);
-            return (
-              <div key={p.id} className="product-card">
-                <Link
-                  to={`/product/${p.id}`}
-                  className="product-thumb"
-                  style={{ background: `linear-gradient(135deg, ${visual.from}, ${visual.to})` }}
+          {products.map((p) => (
+            <div
+              key={p.id}
+              className="product-card"
+              onClick={() => navigate(`/product/${p.id}`)}
+            >
+              <ProductImage product={p} className="product-thumb" />
+              <div className="product-body">
+                <p className="product-category">{p.category}</p>
+                <p className="product-name">{p.name}</p>
+                <span className={`stock ${p.stock <= 0 ? "out" : p.low_stock ? "low" : "in"}`}>
+                  {p.stock <= 0 ? "Out of stock" : p.low_stock ? `Only ${p.stock} left` : "In stock"}
+                </span>
+                <p className="product-price">${p.price.toFixed(2)}</p>
+                <button
+                  disabled={p.stock <= 0}
+                  onClick={(e) => {
+                    e.stopPropagation(); // don't open the product page when adding
+                    addItem(p.id);
+                  }}
                 >
-                  {visual.emoji}
-                </Link>
-                <div className="product-body">
-                  <p className="product-category">{p.category}</p>
-                  <Link to={`/product/${p.id}`} className="product-name">
-                    {p.name}
-                  </Link>
-                  <span className={`stock ${p.stock <= 0 ? "out" : p.low_stock ? "low" : "in"}`}>
-                    {p.stock <= 0 ? "Out of stock" : p.low_stock ? `Only ${p.stock} left` : "In stock"}
-                  </span>
-                  <p className="product-price">${p.price.toFixed(2)}</p>
-                  <button disabled={p.stock <= 0} onClick={() => addItem(p.id)}>
-                    Add to cart
-                  </button>
-                </div>
+                  Add to cart
+                </button>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       )}
     </div>

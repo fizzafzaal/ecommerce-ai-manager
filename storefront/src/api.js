@@ -25,7 +25,21 @@ async function request(path, options = {}) {
   return response.json();
 }
 
-// --- Customers (fake login) ---
+// --- Auth (fake: signup creates a real customer, login matches by email) ---
+export function signup(name, email, password) {
+  return request("/signup", {
+    method: "POST",
+    body: JSON.stringify({ name, email, password }),
+  });
+}
+
+export function login(email, password) {
+  return request("/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+}
+
 export function getCustomers() {
   return request("/customers");
 }

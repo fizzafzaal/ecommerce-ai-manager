@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getProduct } from "../api";
-import { categoryVisual } from "../categoryVisual";
+import ProductImage from "../components/ProductImage";
 import { useCart } from "../context/CartContext";
 
 function ProductDetail() {
@@ -34,7 +34,6 @@ function ProductDetail() {
   if (!product) return null;
 
   const outOfStock = product.stock <= 0;
-  const visual = categoryVisual(product.category);
 
   return (
     <div>
@@ -43,12 +42,7 @@ function ProductDetail() {
       </Link>
 
       <div className="product-detail">
-        <div
-          className="detail-thumb"
-          style={{ background: `linear-gradient(135deg, ${visual.from}, ${visual.to})` }}
-        >
-          {visual.emoji}
-        </div>
+        <ProductImage product={product} className="detail-thumb" />
 
         <div className="detail-info">
           <p className="product-category">{product.category}</p>
