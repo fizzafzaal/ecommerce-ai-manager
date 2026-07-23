@@ -28,3 +28,15 @@ class CustomerSummary(BaseModel):
     id: int
     name: str
 
+
+class ProductOut(BaseModel):
+    """A product as shown in the storefront, with live stock."""
+
+    id: int
+    name: str
+    description: str
+    category: str
+    price: float
+    stock: int
+    low_stock: bool
+
