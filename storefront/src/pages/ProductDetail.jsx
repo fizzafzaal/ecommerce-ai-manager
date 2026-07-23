@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getProduct } from "../api";
+import { categoryVisual } from "../categoryVisual";
 import { useCart } from "../context/CartContext";
 
 function ProductDetail() {
@@ -33,28 +34,40 @@ function ProductDetail() {
   if (!product) return null;
 
   const outOfStock = product.stock <= 0;
+  const visual = categoryVisual(product.category);
 
   return (
-    <div className="product-detail">
+    <div>
       <Link to="/" className="back-link">
         &larr; Back to store
       </Link>
 
-      <h1>{product.name}</h1>
-      <p className="product-category">{product.category}</p>
-      <p className="product-price product-price-lg">${product.price.toFixed(2)}</p>
-      <p className={`stock ${outOfStock ? "out" : product.low_stock ? "low" : "in"}`}>
-        {outOfStock
-          ? "Out of stock"
-          : product.low_stock
-            ? `Only ${product.stock} left in stock`
-            : "In stock"}
-      </p>
-      <p className="product-description">{product.description}</p>
+      <div className="product-detail">
+        <div
+          className="detail-thumb"
+          style={{ background: `linear-gradient(135deg, ${visual.from}, ${visual.to})` }}
+        >
+          {visual.emoji}
+        </div>
 
-      <button disabled={outOfStock} onClick={handleAdd}>
-        {added ? "Added ✓" : "Add to cart"}
-      </button>
+        <div className="detail-info">
+          <p className="product-category">{product.category}</p>
+          <h1>{product.name}</h1>
+          <span className={`stock ${outOfStock ? "out" : product.low_stock ? "low" : "in"}`}>
+            {outOfStock
+              ? "Out of stock"
+              : product.low_stock
+                ? `Only ${product.stock} left in stock`
+                : "In stock"}
+          </span>
+          <p className="product-price product-price-lg">${product.price.toFixed(2)}</p>
+          <p className="product-description">{product.description}</p>
+
+          <button disabled={outOfStock} onClick={handleAdd}>
+            {added ? "Added ✓" : "Add to cart"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

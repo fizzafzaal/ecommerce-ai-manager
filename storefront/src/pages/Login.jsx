@@ -32,37 +32,40 @@ function Login() {
   };
 
   return (
-    <div>
-      <h1>Sign in</h1>
-      {error && <p style={{ color: "red" }}>Couldn't load customers: {error}</p>}
+    <div className="login-page">
+      <div className="login-card">
+        <h1>🛍️ AI Store</h1>
+        <p className="login-sub">Sign in to start shopping</p>
+        {error && <p style={{ color: "var(--danger)" }}>Couldn't load customers: {error}</p>}
 
-      <form onSubmit={handleSubmit}>
-        {/* Decorative only -- not checked by anything. */}
-        <div>
-          <label>Email</label>
-          <input type="email" placeholder="you@example.com" />
-        </div>
-        <div>
-          <label>Password</label>
-          <input type="password" placeholder="••••••••" />
-        </div>
+        <form onSubmit={handleSubmit}>
+          {/* Decorative only -- not checked by anything. */}
+          <div className="field">
+            <label>Email</label>
+            <input type="email" placeholder="you@example.com" />
+          </div>
+          <div className="field">
+            <label>Password</label>
+            <input type="password" placeholder="••••••••" />
+          </div>
 
-        {/* The real control: which existing customer we shop as. */}
-        <div>
-          <label>Shop as</label>
-          <select value={selectedId} onChange={(e) => setSelectedId(e.target.value)}>
-            {customers.map((c) => (
-              <option key={c.id} value={c.id}>
-                #{c.id} — {c.name}
-              </option>
-            ))}
-          </select>
-        </div>
+          {/* The real control: which existing customer we shop as. */}
+          <div className="field">
+            <label>Shop as</label>
+            <select value={selectedId} onChange={(e) => setSelectedId(e.target.value)}>
+              {customers.map((c) => (
+                <option key={c.id} value={c.id}>
+                  #{c.id} — {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <button type="submit" disabled={!selectedId}>
-          Sign in
-        </button>
-      </form>
+          <button type="submit" disabled={!selectedId}>
+            Sign in
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
