@@ -4,14 +4,18 @@ import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App.jsx'
 import { CustomerProvider } from './context/CustomerContext'
+import { CartProvider } from './context/CartContext'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     {/* BrowserRouter enables page navigation; CustomerProvider makes the
-        logged-in customer available to every page. */}
+        logged-in customer available to every page; CartProvider (inside it,
+        since the cart belongs to a customer) tracks the cart. */}
     <BrowserRouter>
       <CustomerProvider>
-        <App />
+        <CartProvider>
+          <App />
+        </CartProvider>
       </CustomerProvider>
     </BrowserRouter>
   </StrictMode>,
