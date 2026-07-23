@@ -1,39 +1,33 @@
-// Stage B skeleton: prove the React app can reach the FastAPI backend.
-// Intentionally plain -- it just fetches products and lists them. Styling
-// and real pages come in later stages.
+// Top-level router. Pages are added here as they're built. Any route
+// other than /login requires a "logged in" customer; if there isn't one,
+// we redirect to the login page.
 
-import { useEffect, useState } from "react";
-import { getProducts } from "./api";
+import { Navigate, Route, Routes } from "react-router-dom";
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import { useCustomer } from "./context/CustomerContext";
+
+// Wraps pages that require a logged-in customer.
+function RequireLogin({ children }) {
+  const { customer } = useCustomer();
+  return customer ? children : <Navigate to="/login" replace />;
+}
 
 function App() {
-  const [products, setProducts] = useState([]);
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  // Fetch the product list once when the page loads.
-  useEffect(() => {
-    getProducts()
-      .then((data) => setProducts(data))
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
-  }, []);
-
-  if (loading) return <p>Loading products...</p>;
-  if (error) return <p style={{ color: "red" }}>Error: {error}</p>;
-
   return (
-    <div>
-      <h1>Storefront (skeleton)</h1>
-      <p>{products.length} products loaded from the backend:</p>
-      <ul>
-        {products.map((p) => (
-          <li key={p.id}>
-            {p.name} — ${p.price} — stock {p.stock}
-            {p.low_stock ? " (low)" : ""}
-          </li>
-        ))}
-      </ul>
-    </div>
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route
+        path="/"
+        element={
+          <RequireLogin>
+            <Home />
+          </RequireLogin>
+        }
+      />
+      {/* Unknown routes fall back to home (which itself guards login). */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
 
