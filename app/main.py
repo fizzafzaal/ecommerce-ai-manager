@@ -12,6 +12,7 @@ Interactive docs are then at http://localhost:8000/docs
 from datetime import datetime
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 from sqlalchemy import or_
 
@@ -36,6 +37,21 @@ app = FastAPI(
     title="E-Commerce AI Manager",
     description="A multi-agent AI system for e-commerce support, refunds, and product search.",
     version="1.0.0",
+)
+
+# Allow the React dev server (Vite) to call this API from its own origin.
+# The storefront runs on a different port during development, so without
+# this the browser blocks its requests. Restricted to local dev origins.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174",
+    ],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Built once and reused -- agents hold model/DB handles we don't want to
