@@ -40,3 +40,27 @@ class ProductOut(BaseModel):
     stock: int
     low_stock: bool
 
+
+class CartItemAdd(BaseModel):
+    """Request body for adding a product to a customer's cart."""
+
+    customer_id: int = Field(..., ge=1)
+    product_id: int = Field(..., ge=1)
+    quantity: int = Field(1, ge=1, description="How many to add.")
+
+
+class CartItemOut(BaseModel):
+    id: int
+    product_id: int
+    name: str
+    price: float
+    quantity: int
+    line_total: float
+
+
+class CartOut(BaseModel):
+    """A customer's whole cart: its line items and the grand total."""
+
+    items: list[CartItemOut]
+    total: float
+

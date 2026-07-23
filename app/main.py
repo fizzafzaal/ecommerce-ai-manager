@@ -15,9 +15,11 @@ from sqlalchemy import or_
 
 from app.agents.product_agent import LOW_STOCK_THRESHOLD
 from app.database import SessionLocal
-from app.models import Customer, Product
+from app.models import CartItem, Customer, Product
 from app.orchestrator import Orchestrator
 from app.schemas import (
+    CartItemAdd,
+    CartOut,
     ChatRequest,
     ChatResponse,
     CustomerSummary,
@@ -106,6 +108,91 @@ def list_categories() -> list[str]:
     try:
         rows = db.query(Product.category).distinct().order_by(Product.category).all()
         return [row[0] for row in rows]
+    finally:
+        db.close()
+
+
+def _build_cart_out(db, customer_id: int) -> CartOut:
+    """Assemble a customer's current cart with per-line and grand totals."""
+    cart_items = (
+        db.query(CartItem)
+        .filter(CartItem.customer_id == customer_id)
+        .order_by(CartItem.id)
+        .all()
+    )
+    items = []
+    total = 0.0
+    for ci in cart_items:
+        line_total = round(ci.product.price * ci.quantity, 2)
+        total += line_total
+        items.append(
+            {
+                "id": ci.id,
+                "product_id": ci.product_id,
+                "name": ci.product.name,
+                "price": ci.product.price,
+                "quantity": ci.quantity,
+                "line_total": line_total,
+            }
+        )
+    return CartOut(items=items, total=round(total, 2))
+
+
+@app.post("/cart", response_model=CartOut)
+def add_to_cart(item: CartItemAdd) -> CartOut:
+    """Add a product to a customer's cart. Adding a product already in the
+    cart increases its quantity rather than creating a duplicate row."""
+    db = SessionLocal()
+    try:
+        if db.get(Product, item.product_id) is None:
+            raise HTTPException(status_code=404, detail="Product not found.")
+
+        existing = (
+            db.query(CartItem)
+            .filter(
+                CartItem.customer_id == item.customer_id,
+                CartItem.product_id == item.product_id,
+            )
+            .first()
+        )
+        if existing:
+            existing.quantity += item.quantity
+        else:
+            db.add(
+                CartItem(
+                    customer_id=item.customer_id,
+                    product_id=item.product_id,
+                    quantity=item.quantity,
+                )
+            )
+        db.commit()
+        return _build_cart_out(db, item.customer_id)
+    finally:
+        db.close()
+
+
+@app.get("/cart", response_model=CartOut)
+def get_cart(customer_id: int) -> CartOut:
+    """Return a customer's current cart."""
+    db = SessionLocal()
+    try:
+        return _build_cart_out(db, customer_id)
+    finally:
+        db.close()
+
+
+@app.delete("/cart/{item_id}", response_model=CartOut)
+def remove_from_cart(item_id: int) -> CartOut:
+    """Remove one line from the cart and return the updated cart."""
+    db = SessionLocal()
+    try:
+        cart_item = db.get(CartItem, item_id)
+        if cart_item is None:
+            raise HTTPException(status_code=404, detail="Cart item not found.")
+        customer_id = cart_item.customer_id
+        db.delete(cart_item)
+        db.commit()
+        return _build_cart_out(db, customer_id)
     finally:
         db.close()
 
