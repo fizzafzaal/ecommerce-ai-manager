@@ -4,8 +4,11 @@
 
 import { Navigate, Route, Routes } from "react-router-dom";
 import Layout from "./components/Layout";
+import Cart from "./pages/Cart";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
+import Orders from "./pages/Orders";
+import ProductDetail from "./pages/ProductDetail";
 import { useCustomer } from "./context/CustomerContext";
 
 // Wraps pages that require a logged-in customer.
@@ -27,6 +30,9 @@ function App() {
         }
       >
         <Route path="/" element={<Home />} />
+        <Route path="/product/:id" element={<ProductDetail />} />
+        <Route path="/cart" element={<Cart />} />
+        <Route path="/orders" element={<Orders />} />
       </Route>
 
       {/* Unknown routes fall back to home (which itself guards login). */}
