@@ -9,13 +9,15 @@ Run with:
 Interactive docs are then at http://localhost:8000/docs
 """
 
+from datetime import datetime
+
 from fastapi import FastAPI, HTTPException
 from loguru import logger
 from sqlalchemy import or_
 
 from app.agents.product_agent import LOW_STOCK_THRESHOLD
 from app.database import SessionLocal
-from app.models import CartItem, Customer, Product
+from app.models import CartItem, Customer, Order, OrderItem, Product
 from app.orchestrator import Orchestrator
 from app.schemas import (
     CartItemAdd,
@@ -24,6 +26,9 @@ from app.schemas import (
     ChatResponse,
     CustomerSummary,
     HealthResponse,
+    OrderCreate,
+    OrderItemOut,
+    OrderOut,
     ProductOut,
 )
 
@@ -193,6 +198,133 @@ def remove_from_cart(item_id: int) -> CartOut:
         db.delete(cart_item)
         db.commit()
         return _build_cart_out(db, customer_id)
+    finally:
+        db.close()
+
+
+def _to_order_out(order: Order) -> OrderOut:
+    """Build the API view of an order from its ORM row and line items."""
+    items = [
+        OrderItemOut(
+            product_id=it.product_id,
+            name=it.product.name,
+            quantity=it.quantity,
+            unit_price=it.unit_price,
+            line_total=round(it.unit_price * it.quantity, 2),
+        )
+        for it in order.items
+    ]
+    return OrderOut(
+        id=order.id,
+        customer_id=order.customer_id,
+        status=order.status,
+        order_date=order.order_date,
+        total_amount=order.total_amount,
+        items=items,
+    )
+
+
+@app.post("/orders", response_model=OrderOut, status_code=201)
+def place_order(order_req: OrderCreate) -> OrderOut:
+    """Place an order. Uses the explicit `items` list if given, otherwise
+    the customer's cart. Stock is checked for every line first (all-or-
+    nothing); on success, inventory is decremented, the order and its
+    items are created in one transaction, and the cart is cleared if it
+    was the source. Decisions and stock changes are pure Python + SQL --
+    no LLM involved."""
+    db = SessionLocal()
+    try:
+        if db.get(Customer, order_req.customer_id) is None:
+            raise HTTPException(status_code=404, detail="Customer not found.")
+
+        from_cart = order_req.items is None
+        if from_cart:
+            cart_items = (
+                db.query(CartItem).filter(CartItem.customer_id == order_req.customer_id).all()
+            )
+            if not cart_items:
+                raise HTTPException(status_code=400, detail="Your cart is empty.")
+            requested = [(ci.product_id, ci.quantity) for ci in cart_items]
+        else:
+            if not order_req.items:
+                raise HTTPException(status_code=400, detail="No items provided.")
+            # Merge duplicate product lines into a single quantity.
+            merged: dict[int, int] = {}
+            for line in order_req.items:
+                merged[line.product_id] = merged.get(line.product_id, 0) + line.quantity
+            requested = list(merged.items())
+
+        # Validate stock for every line before changing anything.
+        products: dict[int, Product] = {}
+        insufficient = []
+        for product_id, qty in requested:
+            product = db.get(Product, product_id)
+            if product is None:
+                raise HTTPException(status_code=404, detail=f"Product {product_id} not found.")
+            products[product_id] = product
+            available = product.inventory.stock_quantity if product.inventory else 0
+            if qty > available:
+                insufficient.append(
+                    {
+                        "product_id": product_id,
+                        "name": product.name,
+                        "requested": qty,
+                        "available": available,
+                    }
+                )
+        if insufficient:
+            raise HTTPException(
+                status_code=409,
+                detail={"error": "insufficient_stock", "items": insufficient},
+            )
+
+        # All lines are stockable: build the order and decrement inventory.
+        order = Order(
+            customer_id=order_req.customer_id,
+            total_amount=0.0,
+            status="completed",
+            order_date=datetime.utcnow(),
+        )
+        total = 0.0
+        for product_id, qty in requested:
+            product = products[product_id]
+            product.inventory.stock_quantity -= qty
+            total += product.price * qty
+            order.items.append(
+                OrderItem(product_id=product_id, quantity=qty, unit_price=product.price)
+            )
+        order.total_amount = round(total, 2)
+        db.add(order)
+
+        if from_cart:
+            db.query(CartItem).filter(CartItem.customer_id == order_req.customer_id).delete()
+
+        db.commit()
+        db.refresh(order)
+        return _to_order_out(order)
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.exception(f"Failed to place order: {e}")
+        raise HTTPException(status_code=500, detail="Could not place the order.")
+    finally:
+        db.close()
+
+
+@app.get("/orders", response_model=list[OrderOut])
+def list_orders(customer_id: int) -> list[OrderOut]:
+    """Return a customer's order history, most recent first."""
+    db = SessionLocal()
+    try:
+        orders = (
+            db.query(Order)
+            .filter(Order.customer_id == customer_id)
+            .order_by(Order.order_date.desc(), Order.id.desc())
+            .all()
+        )
+        return [_to_order_out(o) for o in orders]
     finally:
         db.close()
 

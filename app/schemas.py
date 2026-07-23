@@ -4,6 +4,8 @@ Keeping these separate from the ORM models means the API contract and
 the database schema can evolve independently.
 """
 
+from datetime import datetime
+
 from pydantic import BaseModel, Field
 
 
@@ -63,4 +65,36 @@ class CartOut(BaseModel):
 
     items: list[CartItemOut]
     total: float
+
+
+class OrderLineIn(BaseModel):
+    product_id: int = Field(..., ge=1)
+    quantity: int = Field(..., ge=1)
+
+
+class OrderCreate(BaseModel):
+    """Place an order. If `items` is omitted, the customer's current cart
+    is checked out instead."""
+
+    customer_id: int = Field(..., ge=1)
+    items: list[OrderLineIn] | None = Field(
+        None, description="Explicit lines to order; if omitted, the cart is used."
+    )
+
+
+class OrderItemOut(BaseModel):
+    product_id: int
+    name: str
+    quantity: int
+    unit_price: float
+    line_total: float
+
+
+class OrderOut(BaseModel):
+    id: int
+    customer_id: int
+    status: str
+    order_date: datetime
+    total_amount: float
+    items: list[OrderItemOut]
 
