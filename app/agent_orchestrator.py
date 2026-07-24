@@ -91,6 +91,7 @@ TOOLS = [
 ]
 
 MAX_TOOL_TURNS = 5
+HISTORY_TURNS = 10  # how many prior messages to send back for context
 
 
 class AgentOrchestrator:
@@ -102,23 +103,29 @@ class AgentOrchestrator:
         self.fallback = fallback  # the local Orchestrator, used if Groq fails
         self.client = Groq(api_key=settings.groq_api_key) if settings.groq_enabled else None
 
-    def handle_message(self, message: str, customer_id: int) -> dict:
+    def handle_message(self, message: str, customer_id: int, history: list | None = None) -> dict:
         if self.client is None:
-            return self.fallback.handle_message(message, customer_id)
+            return self.fallback.handle_message(message, customer_id, history=history)
         try:
-            return self._run_groq(message, customer_id)
+            return self._run_groq(message, customer_id, history or [])
         except Exception as e:
             logger.error(f"Groq orchestration failed, falling back to local: {e}")
-            return self.fallback.handle_message(message, customer_id)
+            return self.fallback.handle_message(message, customer_id, history=history)
 
     # --- Groq tool-calling loop ---
 
-    def _run_groq(self, message: str, customer_id: int) -> dict:
+    def _run_groq(self, message: str, customer_id: int, history: list) -> dict:
         name = self._customer_name(customer_id)
-        messages = [
-            {"role": "system", "content": SYSTEM_PROMPT.format(name=name)},
-            {"role": "user", "content": message},
-        ]
+        messages = [{"role": "system", "content": SYSTEM_PROMPT.format(name=name)}]
+        # Include recent prior turns so the assistant remembers context
+        # (e.g. "yes, refund it" after it offered a specific order). Capped
+        # to the last few turns to keep the request small.
+        for turn in history[-HISTORY_TURNS:]:
+            role = turn.get("role")
+            content = turn.get("content", "")
+            if role in ("user", "assistant") and content:
+                messages.append({"role": role, "content": content})
+        messages.append({"role": "user", "content": message})
         tools_used = []
 
         for _ in range(MAX_TOOL_TURNS):

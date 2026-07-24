@@ -1,12 +1,12 @@
-// AI Assistant page: the same multi-agent chat the Streamlit app uses,
-// rebuilt as a store page. Sends messages to POST /chat with the logged-in
-// customer, and shows a "Thinking..." state (replies run a local model on
-// CPU, so they take ~10-40 seconds).
+// AI Assistant page: the multi-agent chat, rebuilt as a store page. Sends
+// messages (with recent history for context) to POST /chat. The conversation
+// lives in ChatContext, so it survives navigating between pages.
 
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { sendChat } from "../api";
+import { useChat } from "../context/ChatContext";
 import { useCustomer } from "../context/CustomerContext";
 
 const SUGGESTIONS = [
@@ -17,7 +17,7 @@ const SUGGESTIONS = [
 
 function Assistant() {
   const { customer } = useCustomer();
-  const [messages, setMessages] = useState([]); // { role, content }
+  const { messages, addMessage, clearChat } = useChat();
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const endRef = useRef(null);
@@ -31,17 +31,16 @@ function Assistant() {
     const message = text.trim();
     if (!message || busy) return;
 
-    setMessages((m) => [...m, { role: "user", content: message }]);
+    // Send the conversation so far as context, then add the new turn.
+    const history = messages.map((m) => ({ role: m.role, content: m.content }));
+    addMessage({ role: "user", content: message });
     setInput("");
     setBusy(true);
     try {
-      const res = await sendChat(message, customer.id);
-      setMessages((m) => [...m, { role: "assistant", content: res.reply }]);
+      const res = await sendChat(message, customer.id, history);
+      addMessage({ role: "assistant", content: res.reply });
     } catch (e) {
-      setMessages((m) => [
-        ...m,
-        { role: "assistant", content: `Sorry, something went wrong (${e.message}).` },
-      ]);
+      addMessage({ role: "assistant", content: `Sorry, something went wrong (${e.message}).` });
     } finally {
       setBusy(false);
     }
@@ -49,11 +48,19 @@ function Assistant() {
 
   return (
     <div className="assistant">
-      <h1>AI Assistant</h1>
-      <p className="assistant-sub">
-        Ask about refunds, products, or our policies. Replies run a local AI model on
-        CPU, so they take about 10-40 seconds.
-      </p>
+      <div className="assistant-head">
+        <div>
+          <h1>AI Assistant</h1>
+          <p className="assistant-sub">
+            Ask about products, your orders, refunds, or our policies.
+          </p>
+        </div>
+        {messages.length > 0 && (
+          <button className="clear-chat" onClick={clearChat} disabled={busy}>
+            Clear chat
+          </button>
+        )}
+      </div>
 
       <div className="chat-window">
         {messages.length === 0 && (

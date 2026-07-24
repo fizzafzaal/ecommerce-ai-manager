@@ -91,9 +91,9 @@ export function getOrders(customerId) {
 }
 
 // --- AI assistant ---
-export function sendChat(message, customerId) {
+export function sendChat(message, customerId, history = []) {
   return request("/chat", {
     method: "POST",
-    body: JSON.stringify({ message, customer_id: customerId }),
+    body: JSON.stringify({ message, customer_id: customerId, history }),
   });
 }

@@ -5,16 +5,20 @@ import './index.css'
 import App from './App.jsx'
 import { CustomerProvider } from './context/CustomerContext'
 import { CartProvider } from './context/CartContext'
+import { ChatProvider } from './context/ChatContext'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     {/* BrowserRouter enables page navigation; CustomerProvider makes the
-        logged-in customer available to every page; CartProvider (inside it,
-        since the cart belongs to a customer) tracks the cart. */}
+        logged-in customer available to every page; CartProvider and
+        ChatProvider (inside it, since both belong to a customer) keep the
+        cart and the AI conversation alive across page navigation. */}
     <BrowserRouter>
       <CustomerProvider>
         <CartProvider>
-          <App />
+          <ChatProvider>
+            <App />
+          </ChatProvider>
         </CartProvider>
       </CustomerProvider>
     </BrowserRouter>

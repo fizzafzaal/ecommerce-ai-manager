@@ -401,8 +401,9 @@ def list_orders(customer_id: int) -> list[OrderOut]:
 def chat(request: ChatRequest) -> ChatResponse:
     """Route a customer message through the orchestrator and return the reply."""
     try:
+        history = [{"role": m.role, "content": m.content} for m in request.history]
         result = orchestrator.handle_message(
-            message=request.message, customer_id=request.customer_id
+            message=request.message, customer_id=request.customer_id, history=history
         )
         return ChatResponse(
             reply=result["reply"],

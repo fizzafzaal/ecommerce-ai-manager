@@ -582,9 +582,29 @@ select:focus {
 }
 
 /* --- AI Assistant --- */
+.assistant-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
 .assistant-sub {
   color: var(--muted);
   margin: -8px 0 20px;
+}
+
+.clear-chat {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 7px 14px;
+  white-space: nowrap;
+}
+
+.clear-chat:hover:not(:disabled) {
+  background: var(--bg);
+  color: var(--text);
 }
 
 .chat-window {

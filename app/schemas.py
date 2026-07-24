@@ -5,13 +5,23 @@ the database schema can evolve independently.
 """
 
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field
+
+
+class ChatMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
 
 
 class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, description="The customer's message.")
     customer_id: int = Field(..., ge=1, description="ID of the customer sending the message.")
+    history: list[ChatMessage] = Field(
+        default_factory=list,
+        description="Recent prior turns, so the assistant remembers context.",
+    )
 
 
 class ChatResponse(BaseModel):

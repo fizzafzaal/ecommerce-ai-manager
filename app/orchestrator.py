@@ -39,7 +39,9 @@ class Orchestrator:
         self.refund_agent = RefundAgent()
         self.product_agent = ProductAgent()
 
-    def handle_message(self, message: str, customer_id: int) -> dict:
+    def handle_message(self, message: str, customer_id: int, history: list | None = None) -> dict:
+        # The local (phi) router is stateless -- `history` is accepted so it
+        # matches the agentic orchestrator's interface, but it isn't used.
         support_result = self.support_agent.run(message=message)
         intent = support_result.get("intent", "unknown")
         entities = support_result.get("entities", {})
