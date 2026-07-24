@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { getProduct } from "../api";
+import { generateMarketing, getProduct } from "../api";
 import ProductImage from "../components/ProductImage";
 import { useCart } from "../context/CartContext";
 
@@ -13,10 +13,13 @@ function ProductDetail() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [added, setAdded] = useState(false);
+  const [marketingCopy, setMarketingCopy] = useState(null);
+  const [generating, setGenerating] = useState(false);
   const { addItem } = useCart();
 
   useEffect(() => {
     setLoading(true);
+    setMarketingCopy(null); // reset when viewing a different product
     getProduct(id)
       .then(setProduct)
       .catch((err) => setError(err.message))
@@ -27,6 +30,18 @@ function ProductDetail() {
     await addItem(product.id);
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
+  };
+
+  const handleGenerate = async () => {
+    setGenerating(true);
+    try {
+      const res = await generateMarketing(product.id);
+      setMarketingCopy(res.marketing_copy);
+    } catch (e) {
+      setMarketingCopy(`Couldn't generate copy right now (${e.message}).`);
+    } finally {
+      setGenerating(false);
+    }
   };
 
   if (loading) return <p>Loading...</p>;
@@ -57,9 +72,21 @@ function ProductDetail() {
           <p className="product-price product-price-lg">${product.price.toFixed(2)}</p>
           <p className="product-description">{product.description}</p>
 
-          <button disabled={outOfStock} onClick={handleAdd}>
-            {added ? "Added ✓" : "Add to cart"}
-          </button>
+          <div className="detail-actions">
+            <button disabled={outOfStock} onClick={handleAdd}>
+              {added ? "Added ✓" : "Add to cart"}
+            </button>
+            <button className="ai-btn" onClick={handleGenerate} disabled={generating}>
+              {generating ? "Writing…" : "✨ Generate AI description"}
+            </button>
+          </div>
+
+          {marketingCopy && (
+            <div className="marketing-box">
+              <span className="marketing-tag">✨ AI-generated</span>
+              <p>{marketingCopy}</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

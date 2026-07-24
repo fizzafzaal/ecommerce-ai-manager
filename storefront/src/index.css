@@ -430,9 +430,46 @@ select:focus {
   line-height: 1.6;
 }
 
+.detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
 .detail-info button {
   padding: 12px 28px;
   font-size: 15px;
+}
+
+.ai-btn {
+  background: linear-gradient(135deg, #7c3aed, #4f46e5);
+}
+
+.ai-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #6d28d9, #4338ca);
+}
+
+.marketing-box {
+  margin-top: 18px;
+  max-width: 560px;
+  background: #faf5ff;
+  border: 1px solid #e9d5ff;
+  border-radius: var(--radius);
+  padding: 16px 18px;
+}
+
+.marketing-box p {
+  margin: 6px 0 0;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.marketing-tag {
+  font-size: 12px;
+  font-weight: 700;
+  color: #7c3aed;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 @media (max-width: 720px) {

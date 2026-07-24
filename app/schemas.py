@@ -41,6 +41,11 @@ class CustomerSummary(BaseModel):
     name: str
 
 
+class MarketingResponse(BaseModel):
+    product: str
+    marketing_copy: str
+
+
 class ProductOut(BaseModel):
     """A product as shown in the storefront, with live stock."""
 

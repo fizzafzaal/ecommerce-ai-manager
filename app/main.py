@@ -31,6 +31,7 @@ from app.schemas import (
     CustomerSummary,
     HealthResponse,
     LoginRequest,
+    MarketingResponse,
     OrderCreate,
     OrderItemOut,
     OrderOut,
@@ -63,12 +64,13 @@ app.add_middleware(
 # reconstruct on every request. When a Groq key is configured, the smart
 # agentic orchestrator handles chat (delegating to the same specialist
 # agents as tools) and falls back to the local one if Groq is unreachable.
+marketing_agent = MarketingAgent()  # also exposed via POST /products/{id}/marketing
 _local_orchestrator = Orchestrator()
 if settings.groq_enabled:
     orchestrator = AgentOrchestrator(
         product_agent=_local_orchestrator.product_agent,
         refund_agent=_local_orchestrator.refund_agent,
-        marketing_agent=MarketingAgent(),
+        marketing_agent=marketing_agent,
         fallback=_local_orchestrator,
     )
     logger.info(f"Chat: using Groq agentic orchestrator ({settings.groq_model}); phi is the fallback.")
@@ -174,6 +176,15 @@ def get_product(product_id: int) -> ProductOut:
         return _to_product_out(product)
     finally:
         db.close()
+
+
+@app.post("/products/{product_id}/marketing", response_model=MarketingResponse)
+def generate_marketing(product_id: int, style: str | None = None) -> MarketingResponse:
+    """Generate marketing copy for a product via the Marketing Agent."""
+    result = marketing_agent.run(product_id=product_id, style=style)
+    if "marketing_copy" not in result:
+        raise HTTPException(status_code=404, detail="Product not found.")
+    return MarketingResponse(product=result["product"], marketing_copy=result["marketing_copy"])
 
 
 @app.get("/categories", response_model=list[str])

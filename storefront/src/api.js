@@ -61,6 +61,11 @@ export function getCategories() {
   return request("/categories");
 }
 
+export function generateMarketing(productId, style) {
+  const query = style ? `?style=${encodeURIComponent(style)}` : "";
+  return request(`/products/${productId}/marketing${query}`, { method: "POST" });
+}
+
 // --- Cart ---
 export function getCart(customerId) {
   return request(`/cart?customer_id=${customerId}`);
