@@ -4,6 +4,8 @@
 // CPU, so they take ~10-40 seconds).
 
 import { useEffect, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { sendChat } from "../api";
 import { useCustomer } from "../context/CustomerContext";
 
@@ -69,7 +71,13 @@ function Assistant() {
 
         {messages.map((m, i) => (
           <div key={i} className={`chat-msg ${m.role}`}>
-            {m.content}
+            {m.role === "assistant" ? (
+              <div className="markdown">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
+              </div>
+            ) : (
+              m.content
+            )}
           </div>
         ))}
 
