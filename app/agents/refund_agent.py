@@ -20,6 +20,36 @@ class RefundAgent(BaseAgent):
     name = "refund_agent"
     timeout_seconds = 10.0
 
+    def get_customer_orders(self, customer_id: int) -> list[dict]:
+        """Read-only: list a customer's orders (newest first) with product
+        names and refund eligibility. Used to help a customer who wants a
+        refund but didn't give an order number."""
+        db = SessionLocal()
+        try:
+            orders = (
+                db.query(Order)
+                .filter(Order.customer_id == customer_id)
+                .order_by(Order.order_date.desc())
+                .all()
+            )
+            summaries = []
+            for order in orders:
+                age_days = (datetime.utcnow() - order.order_date).days
+                summaries.append(
+                    {
+                        "id": order.id,
+                        "date": order.order_date,
+                        "age_days": age_days,
+                        "status": order.status,
+                        "total": order.total_amount,
+                        "products": [item.product.name for item in order.items],
+                        "eligible": order.status == "completed" and age_days <= REFUND_WINDOW_DAYS,
+                    }
+                )
+            return summaries
+        finally:
+            db.close()
+
     def process(self, order_id: int, customer_id: int, reason: str = "") -> dict:
         db = SessionLocal()
         try:
