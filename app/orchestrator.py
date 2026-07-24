@@ -17,7 +17,7 @@ from loguru import logger
 
 from app.agents.product_agent import ProductAgent
 from app.agents.refund_agent import RefundAgent
-from app.agents.support_agent import KEYWORD_INTENT_MAP, SupportAgent
+from app.agents.support_agent import CAPABILITIES_REPLY, KEYWORD_INTENT_MAP, SupportAgent
 from app.config import settings
 from app.llm import FALLBACK_MESSAGE, ask_llm
 
@@ -52,8 +52,9 @@ class Orchestrator:
         logger.info(f"Routing message with intent='{intent}' for customer={customer_id}")
 
         # FAQ short-circuits: the answer is already canned text, no agents
-        # or LLM needed.
-        if intent == "faq":
+        # or LLM needed. Small-talk (greetings, thanks, "what can you do") is
+        # handled the same way -- a canned answer, detected before the model.
+        if intent in ("faq", "smalltalk"):
             answer = support_result.get("answer", "")
             return self._response(reply=answer, intent=intent, agent_outputs={}, formatted=False)
 
@@ -76,9 +77,10 @@ class Orchestrator:
             agent_outputs["products"] = self.product_agent.run(query=query)
 
         if not agent_outputs:
+            # No task and not small-talk: nudge toward what the assistant does.
             reply = (
-                "I'm not sure I understood that. I can help with refunds, "
-                "product searches, and general questions -- could you rephrase?"
+                "I'm not sure I can help with that specific request, but here's what "
+                f"I can do:\n\n{CAPABILITIES_REPLY}"
             )
             return self._response(reply=reply, intent=intent, agent_outputs={}, formatted=False)
 

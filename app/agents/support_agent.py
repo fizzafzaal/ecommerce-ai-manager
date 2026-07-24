@@ -36,6 +36,40 @@ KEYWORD_INTENT_MAP = {
     "product_search": ["looking for", "search", "recommend", "do you have", "buy"],
 }
 
+# Friendly canned reply describing what the assistant can do; reused by the
+# orchestrator's "not sure" fallback too.
+CAPABILITIES_REPLY = (
+    "I can help you a few ways:\n"
+    '- Find products — e.g. "show me warm jackets"\n'
+    '- Process a refund — e.g. "I want a refund for order #12"\n'
+    "- Answer questions about returns, shipping, and payment."
+)
+
+# Greetings / small-talk get an instant canned reply (no model call). Word
+# boundaries avoid false matches like "hi" inside "shipping". These are only
+# used when the message carries no task signal (see _has_task_signal).
+SMALLTALK_PATTERNS = [
+    (
+        re.compile(r"\b(hi|hello|hey|hiya|howdy|greetings|good\s+(morning|afternoon|evening))\b"),
+        "Hello! 👋 I'm your shopping assistant. I can help you find products, "
+        "check our policies, or process a refund. What can I help you with?",
+    ),
+    (
+        re.compile(r"\b(thank you|thanks|thankyou|thx|appreciate)\b"),
+        "You're welcome! Is there anything else I can help you with?",
+    ),
+    (
+        re.compile(r"\b(who are you|what are you|your name)\b"),
+        "I'm the store's AI assistant. I can help with product searches, refunds, "
+        "and questions about our policies.",
+    ),
+    (re.compile(r"\b(what can you do|how can you help|what do you do)\b"), CAPABILITIES_REPLY),
+    (
+        re.compile(r"\b(bye|goodbye|see you|see ya|cya)\b"),
+        "Thanks for stopping by! Have a great day. 😊",
+    ),
+]
+
 ORDER_ID_PATTERN = re.compile(r"order\s*#?\s*(\d+)", re.IGNORECASE)
 
 INTENT_PROMPT = (
@@ -59,6 +93,19 @@ class SupportAgent(BaseAgent):
         if faq_answer:
             return {"intent": "faq", "answer": faq_answer, "entities": {}, "method": "keyword"}
 
+        # Greetings / small-talk: answer instantly (no model call), but only
+        # when the message has no task signal, so "hi, need a refund for
+        # order 5" still routes to the refund flow instead of just saying hi.
+        if not self._has_task_signal(message):
+            smalltalk = self._match_smalltalk(message)
+            if smalltalk:
+                return {
+                    "intent": "smalltalk",
+                    "answer": smalltalk,
+                    "entities": {},
+                    "method": "keyword",
+                }
+
         # In safe mode the LLM is skipped entirely and we go straight to
         # keyword matching.
         intent = self._detect_intent_via_llm(message) if settings.use_llm else None
@@ -76,6 +123,23 @@ class SupportAgent(BaseAgent):
             if topic in lowered:
                 return answer
         return None
+
+    def _match_smalltalk(self, message: str) -> str | None:
+        lowered = message.lower().strip()
+        for pattern, reply in SMALLTALK_PATTERNS:
+            if pattern.search(lowered):
+                return reply
+        return None
+
+    def _has_task_signal(self, message: str) -> bool:
+        """True if the message looks like an actual task (a refund/product
+        request or an order number), in which case it should be routed
+        normally rather than treated as small-talk."""
+        lowered = message.lower()
+        for keywords in KEYWORD_INTENT_MAP.values():
+            if any(keyword in lowered for keyword in keywords):
+                return True
+        return bool(ORDER_ID_PATTERN.search(message))
 
     def _detect_intent_via_llm(self, message: str) -> str | None:
         """Return a confident intent, or None if the LLM's reply wasn't
