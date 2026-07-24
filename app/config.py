@@ -28,6 +28,17 @@ class Settings(BaseSettings):
 
     embedding_model: str = "all-MiniLM-L6-v2"
 
+    # Groq cloud LLM (the "smart" agentic brain). When a key is set, the
+    # assistant uses Groq to orchestrate the specialist agents as tools;
+    # if it's missing or Groq is unreachable, we fall back to the local
+    # phi router. The key lives only in .env (never committed).
+    groq_api_key: str | None = None
+    groq_model: str = "openai/gpt-oss-20b"
+
+    @property
+    def groq_enabled(self) -> bool:
+        return bool(self.groq_api_key)
+
     environment: str = "development"
 
 

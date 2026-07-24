@@ -16,7 +16,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 from sqlalchemy import or_
 
+from app.agent_orchestrator import AgentOrchestrator
 from app.agents.product_agent import LOW_STOCK_THRESHOLD
+from app.config import settings
 from app.database import SessionLocal
 from app.models import CartItem, Customer, Order, OrderItem, Product
 from app.orchestrator import Orchestrator
@@ -57,8 +59,20 @@ app.add_middleware(
 )
 
 # Built once and reused -- agents hold model/DB handles we don't want to
-# reconstruct on every request.
-orchestrator = Orchestrator()
+# reconstruct on every request. When a Groq key is configured, the smart
+# agentic orchestrator handles chat (delegating to the same specialist
+# agents as tools) and falls back to the local one if Groq is unreachable.
+_local_orchestrator = Orchestrator()
+if settings.groq_enabled:
+    orchestrator = AgentOrchestrator(
+        product_agent=_local_orchestrator.product_agent,
+        refund_agent=_local_orchestrator.refund_agent,
+        fallback=_local_orchestrator,
+    )
+    logger.info(f"Chat: using Groq agentic orchestrator ({settings.groq_model}); phi is the fallback.")
+else:
+    orchestrator = _local_orchestrator
+    logger.info("Chat: Groq not configured; using the local phi orchestrator.")
 
 
 @app.get("/health", response_model=HealthResponse)
