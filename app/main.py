@@ -17,6 +17,7 @@ from loguru import logger
 from sqlalchemy import or_
 
 from app.agent_orchestrator import AgentOrchestrator
+from app.agents.marketing_agent import MarketingAgent
 from app.agents.product_agent import LOW_STOCK_THRESHOLD
 from app.config import settings
 from app.database import SessionLocal
@@ -67,6 +68,7 @@ if settings.groq_enabled:
     orchestrator = AgentOrchestrator(
         product_agent=_local_orchestrator.product_agent,
         refund_agent=_local_orchestrator.refund_agent,
+        marketing_agent=MarketingAgent(),
         fallback=_local_orchestrator,
     )
     logger.info(f"Chat: using Groq agentic orchestrator ({settings.groq_model}); phi is the fallback.")

@@ -19,7 +19,7 @@ from loguru import logger
 
 from app.config import settings
 from app.database import SessionLocal
-from app.models import Customer
+from app.models import Customer, Product
 
 SYSTEM_PROMPT = """You are a friendly, concise shopping assistant for an online store called "AI Store". \
 You are chatting with {name}.
@@ -88,6 +88,27 @@ TOOLS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "write_marketing_copy",
+            "description": "Generate catchy marketing copy / a promotional description for a store product. Use when asked to write an ad, tagline, or product description. Return the copy to the customer.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "product": {
+                        "type": "string",
+                        "description": "The product name (or id) to write copy for.",
+                    },
+                    "style": {
+                        "type": "string",
+                        "description": "Optional tone/style, e.g. 'luxury', 'playful', 'minimal'.",
+                    },
+                },
+                "required": ["product"],
+            },
+        },
+    },
 ]
 
 MAX_TOOL_TURNS = 5
@@ -97,9 +118,10 @@ HISTORY_TURNS = 10  # how many prior messages to send back for context
 class AgentOrchestrator:
     """Runs the Groq tool-calling loop, delegating to the specialist agents."""
 
-    def __init__(self, product_agent, refund_agent, fallback):
+    def __init__(self, product_agent, refund_agent, marketing_agent, fallback):
         self.product_agent = product_agent
         self.refund_agent = refund_agent
+        self.marketing_agent = marketing_agent
         self.fallback = fallback  # the local Orchestrator, used if Groq fails
         self.client = Groq(api_key=settings.groq_api_key) if settings.groq_enabled else None
 
@@ -217,7 +239,26 @@ class AgentOrchestrator:
                 return {"error": "no order_id provided"}
             return self.refund_agent.run(order_id=int(order_id), customer_id=customer_id)
 
+        if name == "write_marketing_copy":
+            product_id = self._resolve_product_id(args.get("product", ""))
+            if product_id is None:
+                return {"error": "product not found"}
+            return self.marketing_agent.run(product_id=product_id, style=args.get("style"))
+
         return {"error": f"unknown tool {name}"}
+
+    def _resolve_product_id(self, product: str) -> int | None:
+        """Resolve a product reference (an id or a name) to a product id."""
+        product = str(product).strip()
+        db = SessionLocal()
+        try:
+            if product.isdigit():
+                found = db.get(Product, int(product))
+                return found.id if found else None
+            match = db.query(Product).filter(Product.name.ilike(f"%{product}%")).first()
+            return match.id if match else None
+        finally:
+            db.close()
 
     def _customer_name(self, customer_id: int) -> str:
         db = SessionLocal()
