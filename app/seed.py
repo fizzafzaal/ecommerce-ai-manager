@@ -97,10 +97,11 @@ def seed_customers(db):
 def seed_products_and_inventory(db):
     products = []
     for i, item in enumerate(PRODUCTS, start=1):
-        # A keyword-based stock photo, locked to a stable image per product
-        # so it doesn't change on every page load. The frontend falls back
-        # to an emoji tile if the image can't be loaded (e.g. offline).
-        image_url = f"https://loremflickr.com/600/400/{item['img']}?lock={i}"
+        # Product photos are committed under storefront/public/products/,
+        # named by product id, and served locally by the frontend (reliable
+        # and offline-friendly). The frontend falls back to an emoji tile if
+        # an image is ever missing.
+        image_url = f"/products/{i}.jpg"
         product = Product(
             name=item["name"],
             description=item["description"],

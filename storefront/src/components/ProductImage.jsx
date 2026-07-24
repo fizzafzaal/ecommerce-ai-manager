@@ -1,6 +1,7 @@
 // Shows a product's photo, falling back to the category emoji tile if the
-// product has no image or the image fails to load (e.g. offline). Used on
-// both the product cards and the detail page.
+// product has no image or the image fails to load. Images are served from
+// Openverse's CDN, which errors cleanly (rather than hanging) when a photo
+// is unavailable, so a simple onError fallback is enough.
 
 import { useState } from "react";
 import { categoryVisual } from "../categoryVisual";
