@@ -12,7 +12,7 @@ function Header() {
   return (
     <header className="site-header">
       <Link to="/" className="brand">
-        🛍️ AI Store
+        🛍️ ShopSphere
       </Link>
 
       <nav className="site-nav">

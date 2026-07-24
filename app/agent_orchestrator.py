@@ -21,7 +21,7 @@ from app.config import settings
 from app.database import SessionLocal
 from app.models import Customer, Product
 
-SYSTEM_PROMPT = """You are a friendly, concise shopping assistant for an online store called "AI Store". \
+SYSTEM_PROMPT = """You are a friendly, concise shopping assistant for an online store called "ShopSphere". \
 You are chatting with {name}.
 
 You can help with three things, using your tools:

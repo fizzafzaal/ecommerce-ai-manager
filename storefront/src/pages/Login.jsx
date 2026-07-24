@@ -46,7 +46,7 @@ function Login() {
   return (
     <div className="login-page">
       <div className="login-card">
-        <h1>🛍️ AI Store</h1>
+        <h1>🛍️ ShopSphere</h1>
         <p className="login-sub">
           {isSignup ? "Create your account to start shopping" : "Sign in to your account"}
         </p>
