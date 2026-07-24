@@ -4,6 +4,7 @@
 
 import { Navigate, Route, Routes } from "react-router-dom";
 import Layout from "./components/Layout";
+import Assistant from "./pages/Assistant";
 import Cart from "./pages/Cart";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -33,6 +34,7 @@ function App() {
         <Route path="/product/:id" element={<ProductDetail />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/orders" element={<Orders />} />
+        <Route path="/assistant" element={<Assistant />} />
       </Route>
 
       {/* Unknown routes fall back to home (which itself guards login). */}
