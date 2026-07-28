@@ -615,7 +615,27 @@ select:focus {
 
 .order-total {
   font-weight: 700;
-  margin-top: 8px;
+}
+
+.order-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  gap: 12px;
+}
+
+.invoice-link {
+  color: var(--brand);
+  font-weight: 600;
+  font-size: 14px;
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+}
+
+.invoice-link:hover {
+  background: var(--brand-soft);
 }
 
 /* --- AI Assistant --- */

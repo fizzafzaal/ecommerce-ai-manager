@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { getOrders } from "../api";
+import { getOrders, invoiceUrl } from "../api";
 import { useCustomer } from "../context/CustomerContext";
 
 function Orders() {
@@ -57,7 +57,17 @@ function Orders() {
                   </li>
                 ))}
               </ul>
-              <div className="order-total">Total: ${order.total_amount.toFixed(2)}</div>
+              <div className="order-footer">
+                <span className="order-total">Total: ${order.total_amount.toFixed(2)}</span>
+                <a
+                  className="invoice-link"
+                  href={invoiceUrl(order.id)}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Download invoice
+                </a>
+              </div>
             </div>
           ))}
         </div>

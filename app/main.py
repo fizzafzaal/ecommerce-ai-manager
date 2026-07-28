@@ -11,7 +11,7 @@ Interactive docs are then at http://localhost:8000/docs
 
 from datetime import datetime
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 from sqlalchemy import or_
@@ -21,6 +21,7 @@ from app.agents.marketing_agent import MarketingAgent
 from app.agents.product_agent import LOW_STOCK_THRESHOLD
 from app.config import settings
 from app.database import SessionLocal
+from app.invoice import generate_invoice_png
 from app.models import CartItem, Customer, Order, OrderItem, Product
 from app.orchestrator import Orchestrator
 from app.schemas import (
@@ -406,6 +407,39 @@ def list_orders(customer_id: int) -> list[OrderOut]:
             .all()
         )
         return [_to_order_out(o) for o in orders]
+    finally:
+        db.close()
+
+
+@app.get("/orders/{order_id}/invoice")
+def order_invoice(order_id: int) -> Response:
+    """Generate and return a downloadable invoice image (PNG) for an order."""
+    db = SessionLocal()
+    try:
+        order = db.get(Order, order_id)
+        if order is None:
+            raise HTTPException(status_code=404, detail="Order not found.")
+        items = [
+            {
+                "name": it.product.name,
+                "qty": it.quantity,
+                "unit_price": it.unit_price,
+                "line_total": round(it.unit_price * it.quantity, 2),
+            }
+            for it in order.items
+        ]
+        png = generate_invoice_png(
+            order_id=order.id,
+            date_str=order.order_date.strftime("%Y-%m-%d"),
+            customer_name=order.customer.name,
+            items=items,
+            total=order.total_amount,
+        )
+        return Response(
+            content=png,
+            media_type="image/png",
+            headers={"Content-Disposition": f'inline; filename="invoice_{order.id}.png"'},
+        )
     finally:
         db.close()
 

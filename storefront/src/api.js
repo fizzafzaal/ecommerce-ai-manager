@@ -66,6 +66,11 @@ export function generateMarketing(productId, style) {
   return request(`/products/${productId}/marketing${query}`, { method: "POST" });
 }
 
+// Direct URL to an order's downloadable invoice image.
+export function invoiceUrl(orderId) {
+  return `${API_BASE}/orders/${orderId}/invoice`;
+}
+
 // --- Cart ---
 export function getCart(customerId) {
   return request(`/cart?customer_id=${customerId}`);
