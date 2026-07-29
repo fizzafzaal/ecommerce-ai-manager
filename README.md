@@ -1,64 +1,78 @@
-# E-Commerce AI Manager
+# ShopSphere — E-Commerce AI Manager
 
-A multi-agent AI system for e-commerce operations. Specialized agents handle
-customer support, refunds, and product search, coordinated by a **deterministic
-(non-LLM) router**. A local language model (phi-2 via Ollama) is used only for
-understanding language and writing friendly text — never for business decisions
-like approving a refund. Everything runs locally on CPU, with no paid APIs.
+A full e-commerce web app with an **agentic AI assistant** built in. Customers
+can sign up, browse a product catalogue with images, add to cart, place orders,
+track deliveries, download invoices, and chat with an AI that can search
+products, look up their orders, process refunds, and write marketing copy.
 
-Built as a university Final Year Project, designed to run on a modest laptop
-(8GB RAM, no GPU).
+The AI is **agentic**: a large language model orchestrates specialist agents
+(product, refund, marketing) as *tools*, but every **business decision**
+(refund eligibility, stock, prices, invoice authenticity) is made by **Python
+rules on real database data** — so the AI can't hallucinate an approval or
+invent a number. It also **degrades gracefully**: online it uses a fast cloud
+model (Groq); offline it falls back to a local model (phi via Ollama).
+
+Built as a university Final Year Project.
 
 ---
 
-## What it does
+## Features
 
-- **Customer support** — detects what the customer wants (refund, product
-  search, FAQ) and answers common questions directly.
-- **Refunds** — decides eligibility with fixed business rules (order exists,
-  belongs to the customer, within 30 days, not already refunded) and updates
-  the database in a transaction.
-- **Product search** — semantic search over the product catalogue ("warm
-  jacket" finds coats and jackets), with live stock levels and low-stock flags.
+**Storefront (React)**
+- Sign up / log in (creates a real customer record; no password security — demo only)
+- Browse products by category, with real photos and live stock
+- Product detail pages, with an AI **"Generate description"** button
+- Server-side cart, checkout (decrements stock transactionally), order history
+- **Order tracking** — Placed → Processing → Shipped → Delivered, advancing by real elapsed time, with an estimated delivery
+- **Order detail page** with a visual tracking timeline
+- **Downloadable invoices** (generated as images)
+- **Invoice verification** — upload an invoice image; it's verified against the database
 
-A single request can combine actions, e.g. *"I want a refund for order #1 and
-see similar items"* returns a refund decision **and** a product list in one
-reply.
+**AI Assistant (chat)**
+- Understands free-form messages ("do you have warm jackets under $70?", "where's my order #5?", "refund my kettle", "write a fun ad for the puffer jacket")
+- Remembers the conversation (multi-turn: "yes, refund it")
+- Uses the specialist agents as tools; renders replies as rich markdown
 
 ---
 
 ## Architecture
 
 ```
-          ┌─────────────┐
-User ───► │  Streamlit  │  (chat UI, talks to the API over HTTP)
-          └──────┬──────┘
-                 │  POST /chat
-          ┌──────▼──────┐
-          │   FastAPI   │  (/health, /chat, /customers)
-          └──────┬──────┘
-                 │
-          ┌──────▼───────┐
-          │ Orchestrator │  ← deterministic router (plain Python, NOT an LLM)
-          └──┬───────┬───┘
-             │       │
-   ┌─────────▼─┐  ┌──▼────────┐  ┌────────────┐
-   │  Support  │  │  Refund   │  │  Product   │
-   │  Agent    │  │  Agent    │  │  Agent     │
-   └─────┬─────┘  └─────┬─────┘  └─────┬──────┘
-         │              │              │
-      phi (LLM)      SQLite         ChromaDB
-   intent + wording  (rules)     (semantic search)
+                      React storefront (Vite)         Streamlit (backup chat UI)
+                              │  HTTP                         │
+                              ▼                               ▼
+                    ┌──────────────────────────  FastAPI  ──────────────────────────┐
+                    │  /products /cart /orders /orders/{id}/invoice /verify-invoice  │
+                    │  /signup /login /chat ...                                       │
+                    └───────────────────────────────┬───────────────────────────────┘
+                                                     │ POST /chat
+                                          ┌──────────▼───────────┐
+                                          │  Agent Orchestrator  │   ← Groq LLM (the brain)
+                                          │  (LLM + tool-calling)│      decides which tool to call
+                                          └───┬────────┬─────────┘
+                        search_products │ get_my_orders │ request_refund │ write_marketing_copy
+                                        ▼        ▼        ▼        ▼
+                              ┌─────────┐ ┌─────────┐ ┌──────────┐
+                              │ Product │ │ Refund  │ │Marketing │   ← specialist agents (tools)
+                              │  Agent  │ │  Agent  │ │  Agent   │
+                              └────┬────┘ └────┬────┘ └────┬─────┘
+                                   ▼           ▼           ▼
+                              ChromaDB      SQLite       Groq/phi
+                            (semantic     (rules +      (copywriting)
+                             search)      decisions)
+
+  Offline fallback: if Groq is unreachable, /chat uses a local deterministic
+  router (app/orchestrator.py) with the Support Agent + phi (via Ollama).
+
+  Invoice verification: Tesseract OCR reads the uploaded image; Python checks
+  the extracted order number + total against the database.
 ```
 
-**Key design principle:** the LLM detects intent and phrases replies; **rules
-and database queries make every decision**. This prevents hallucinated refund
-approvals or invented stock numbers — all facts in a reply come straight from
-the database.
-
-The system also degrades gracefully: every LLM call has a timeout and a
-fallback, and if the model is slow or unavailable, intent detection falls back
-to keyword matching and replies fall back to plain (still correct) text.
+**Key principle — AI reads/orchestrates, rules decide.** The LLM chooses tools
+and phrases replies; refund eligibility, stock, prices, and invoice
+authenticity are computed in Python against the database. The customer id is
+injected server-side, never by the model, so the AI can't reach another
+customer's data.
 
 ---
 
@@ -66,132 +80,97 @@ to keyword matching and replies fall back to plain (still correct) text.
 
 | Layer | Tool |
 |---|---|
-| Backend / API | FastAPI + Uvicorn |
-| Database | SQLite via SQLAlchemy 2.x |
-| Vector search | ChromaDB + `all-MiniLM-L6-v2` embeddings |
-| LLM runtime | Ollama running **phi-2** (CPU, ~2GB RAM) |
-| Frontend | Streamlit |
+| Storefront | **React** (Vite), React Router, react-markdown |
+| Backup chat UI | **Streamlit** |
+| Backend / API | **FastAPI** + Uvicorn |
+| Database | **SQLite** via SQLAlchemy 2.x |
+| Product search | **ChromaDB** + `all-MiniLM-L6-v2` embeddings (sentence-transformers) |
+| Cloud AI (chat brain) | **Groq** (`openai/gpt-oss-20b`) with tool-calling |
+| Local AI (offline fallback) | **phi** via **Ollama** |
+| Invoice OCR | **Tesseract** (pytesseract) |
+| Invoice / image rendering | **Pillow** |
 | Mock data | Faker |
 | Tests | pytest |
 
-Everything is free, open-source, and CPU-only.
+Languages: Python (backend), JavaScript (frontend), SQL (via ORM), HTML/CSS.
 
 ---
 
 ## Setup
 
-**Prerequisites:** Python 3.10+, and [Ollama](https://ollama.com) installed.
+**Prerequisites**
+- Python 3.10+
+- Node.js 18+ (for the React storefront)
+- [Tesseract OCR](https://github.com/UB-Mannheim/tesseract/wiki) — `winget install UB-Mannheim.TesseractOCR` (for invoice verification)
+- A free **Groq API key** — https://console.groq.com (for the smart assistant)
+- *(Optional)* [Ollama](https://ollama.com) + `ollama pull phi` — only for the offline fallback
 
-1. **Create the virtual environment and install dependencies:**
-   ```bash
-   python -m venv venv
-   venv\Scripts\activate            # Windows
-   # source venv/bin/activate       # macOS/Linux
-   pip install -r requirements.txt
-   ```
+**Steps**
+```bash
+# 1. Python environment
+python -m venv venv
+venv\Scripts\activate                 # Windows  (source venv/bin/activate on macOS/Linux)
+pip install -r requirements.txt
 
-2. **Pull the language model** (once, ~1.6GB download):
-   ```bash
-   ollama pull phi
-   ```
+# 2. Settings — copy the template and add your key
+copy .env.example .env                # then set GROQ_API_KEY=... in .env
 
-3. **Create your settings file** by copying the template:
-   ```bash
-   copy .env.example .env           # Windows
-   # cp .env.example .env           # macOS/Linux
-   ```
+# 3. Seed the database (customers, products, orders)
+python -m app.seed
 
-4. **Seed the database** with mock data (customers, products, orders, refunds):
-   ```bash
-   python -m app.seed
-   ```
+# 4. Build the product search index (embeds the 40 products, once)
+python -m app.vector_store
 
-5. **Build the product search index** (embeds the 40 products, ~30s once):
-   ```bash
-   python -m app.vector_store
-   ```
+# 5. Install the storefront's dependencies
+cd storefront
+npm install
+cd ..
+```
 
 ---
 
 ## Running it
 
-### Easiest: one-click launcher (Windows)
+Two processes: the **backend** and the **storefront**.
 
-Double-click **`run_demo.bat`**. It starts Ollama if needed, pre-warms the
-model so the first reply is fast, launches the backend and the chat UI, and
-opens your browser. To shut everything down, double-click **`stop_demo.bat`**.
-
-### Manual (two terminals)
-
-You need **two terminals** (both with the venv activated), and Ollama running.
-
-**Terminal 1 — the backend API:**
 ```bash
+# Terminal 1 — backend API (http://localhost:8000, docs at /docs)
 uvicorn app.main:app
-```
-Interactive API docs are then at http://localhost:8000/docs
 
-**Terminal 2 — the chat UI:**
-```bash
-streamlit run frontend/chat_app.py
+# Terminal 2 — React storefront (http://localhost:5173)
+cd storefront
+npm run dev
 ```
-Then open http://localhost:8501, pick a customer, and start chatting.
 
-**Tip:** pre-warm the model first so your first reply isn't a slow cold start:
-```bash
-python -m app.warmup
-```
+Open **http://localhost:5173**, sign up, and explore.
+
+**Backup Streamlit chat UI** (optional, simpler): `streamlit run frontend/chat_app.py`
 
 ### Things to try
-Pick **customer #1** in the sidebar, then send:
-- `what is your return policy?` — instant FAQ answer
-- `do you have any warm winter jackets?` — product search
-- `I want a refund for order #1` — refund **approved**
-- `I want a refund for order #16` — refund **rejected** (outside 30-day window)
+- Sign up as yourself → browse → add to cart → checkout → **My Orders** → open an order (tracking timeline) → **Download invoice**.
+- **Verify Invoice** page → upload that invoice → *verified*; edit its total and re-upload → *not verified*; upload any other photo → *not recognized*.
+- **AI Assistant** → "what have I ordered?", "where's my order #5?", "show me warm jackets under $70", "write a playful ad for the air fryer".
 
 ---
 
-## Running the tests
+## Configuration (.env)
+
+| Setting | Purpose |
+|---|---|
+| `GROQ_API_KEY` | Enables the smart cloud assistant (falls back to phi if unset) |
+| `GROQ_MODEL` | Groq model (default `openai/gpt-oss-20b`) |
+| `USE_LLM` | `false` = safe mode: no local model, keyword routing only |
+| `SHIP_AFTER_HOURS` / `DELIVER_AFTER_HOURS` | When an order becomes Shipped / Delivered (default 3h / 5h; lower to demo tracking live) |
+
+---
+
+## Tests
 
 ```bash
 pytest -q
 ```
-The tests avoid the LLM (so they're fast and repeatable) and clean up after
-themselves, so they never disturb the seeded demo data.
-
----
-
-## Safe mode (low-memory fallback)
-
-If you ever need to run with minimal memory — or Ollama isn't available — set
-`USE_LLM=false` in `.env`. The system then skips the language model entirely:
-
-- **Unchanged:** refund decisions, product search, stock, and FAQ answers —
-  none of these ever used the LLM.
-- **Simpler:** intent detection uses keyword matching, and replies use plain
-  (still correct) wording instead of the LLM-written friendly opener.
-
-This drops peak memory from ~6.8GB to ~4.5GB. It's a fallback — the default is
-full quality (`USE_LLM=true`).
-
----
-
-## Known limitations
-
-These are deliberate trade-offs for a 3-day build on modest hardware:
-
-- **Replies take ~10–40 seconds.** phi-2 runs on CPU; the first reply after
-  startup is slowest because the model loads into memory. This is expected, not
-  a bug — the UI shows a "Thinking..." spinner.
-- **Small model.** phi-2 sometimes phrases things oddly. Because it never makes
-  decisions, this only affects wording, never correctness.
-- **Close other heavy apps (e.g. Chrome) while running.** The full stack
-  (API + embeddings + phi + UI) uses ~6.8GB RAM. On an 8GB machine, a browser
-  with many tabs can push you into swapping.
-- **One order = one product.** Orders are single-item to keep the refund/stock
-  logic simple. Multi-item orders are future work.
-- **No authentication, payments, or real integrations.** Out of scope for the
-  MVP.
+Tests avoid the LLM (fast, repeatable) and clean up their own data, so they
+never disturb the seeded demo data.
 
 ---
 
@@ -199,25 +178,39 @@ These are deliberate trade-offs for a 3-day build on modest hardware:
 
 ```
 ecommerce-ai-manager/
-├── app/
-│   ├── main.py           # FastAPI entry point (/health, /chat, /customers)
-│   ├── config.py         # settings loaded from .env
-│   ├── database.py       # SQLite + SQLAlchemy setup
-│   ├── models.py         # database tables (ORM)
-│   ├── schemas.py        # API request/response shapes (Pydantic)
-│   ├── orchestrator.py   # deterministic router (NOT an LLM)
-│   ├── llm.py            # single wrapper for all Ollama calls
-│   ├── vector_store.py   # ChromaDB semantic search
-│   ├── seed.py           # generate + insert mock data
+├── app/                          # backend (FastAPI)
+│   ├── main.py                   # API endpoints
+│   ├── config.py                 # settings (.env)
+│   ├── database.py  models.py  schemas.py
+│   ├── agent_orchestrator.py     # Groq LLM + tool-calling (primary brain)
+│   ├── orchestrator.py           # deterministic router (offline fallback)
+│   ├── llm.py                    # Ollama/phi + Groq text helpers
+│   ├── vector_store.py           # ChromaDB semantic search
+│   ├── invoice.py                # invoice image generation (Pillow)
+│   ├── invoice_verifier.py       # OCR + DB verification
+│   ├── tracking.py               # order tracking stages
+│   ├── seed.py                   # mock data
 │   └── agents/
-│       ├── base_agent.py     # shared parent (timeout, logging, fallback)
-│       ├── support_agent.py  # intent detection + FAQ
-│       ├── refund_agent.py   # refund rules (deterministic)
-│       └── product_agent.py  # semantic search + stock
+│       ├── base_agent.py         # shared parent (timeout, logging, fallback)
+│       ├── support_agent.py      # intent / FAQ / small-talk (fallback path)
+│       ├── refund_agent.py       # refund rules + order lookup
+│       ├── product_agent.py      # semantic search + stock
+│       └── marketing_agent.py    # product marketing copy
+├── storefront/                   # React app (Vite)
+│   └── src/  (pages/, components/, context/, api.js)
 ├── frontend/
-│   └── chat_app.py       # Streamlit chat UI
-├── tests/
-│   └── test_agents.py    # sanity tests
-├── requirements.txt
-└── .env.example
+│   └── chat_app.py               # Streamlit backup chat UI
+├── tests/test_agents.py
+├── requirements.txt   .env.example   run_demo.bat   stop_demo.bat
+```
+
+---
+
+## Notes & limitations
+
+- **The AI assistant needs internet** (Groq). Offline, it falls back to the local phi model automatically.
+- **Invoice verification needs Tesseract installed.** It reads clean generated invoices very accurately; heavily blurred phone photos may read less reliably.
+- **Login is visual only** — no real authentication/passwords; signup just creates a customer record.
+- **Order tracking is time-derived** (not a real courier) and progresses on a configurable timer.
+- **No real payments or shipping integrations** — out of scope.
 ```
