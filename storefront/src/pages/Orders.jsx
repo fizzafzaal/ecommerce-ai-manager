@@ -46,8 +46,11 @@ function Orders() {
               className={`order-card ${order.id === justPlaced ? "highlight" : ""}`}
             >
               <div className="order-head">
-                <strong>Order #{order.id}</strong>
+                <Link to={`/orders/${order.id}`} className="order-id-link">
+                  Order #{order.id}
+                </Link>
                 <span>{new Date(order.order_date).toLocaleDateString()}</span>
+                <span className="track-badge">{order.tracking_status}</span>
                 <span className={`order-status ${order.status}`}>{order.status}</span>
               </div>
               <ul className="order-items">

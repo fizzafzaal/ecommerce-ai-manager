@@ -8,6 +8,7 @@ import Assistant from "./pages/Assistant";
 import Cart from "./pages/Cart";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
+import OrderDetail from "./pages/OrderDetail";
 import Orders from "./pages/Orders";
 import ProductDetail from "./pages/ProductDetail";
 import VerifyInvoice from "./pages/VerifyInvoice";
@@ -35,6 +36,7 @@ function App() {
         <Route path="/product/:id" element={<ProductDetail />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/orders" element={<Orders />} />
+        <Route path="/orders/:id" element={<OrderDetail />} />
         <Route path="/verify" element={<VerifyInvoice />} />
         <Route path="/assistant" element={<Assistant />} />
       </Route>

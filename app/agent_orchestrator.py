@@ -24,10 +24,13 @@ from app.models import Customer, Product
 SYSTEM_PROMPT = """You are a friendly, concise shopping assistant for an online store called "ShopSphere". \
 You are chatting with {name}.
 
-You can help with three things, using your tools:
+You can help with these things, using your tools:
 - Finding products (search_products)
-- Looking up this customer's own orders (get_my_orders)
+- Looking up this customer's own orders, including delivery/tracking status (get_my_orders)
 - Processing refunds (request_refund)
+- Writing marketing copy for a product (write_marketing_copy)
+
+For "where is my order?" / tracking questions, use get_my_orders and report the order's tracking_status (Processing, Shipped, or Delivered).
 
 Store policies:
 - Refunds are allowed within 30 days of purchase, for orders that belong to the customer and haven't already been refunded.
@@ -225,6 +228,7 @@ class AgentOrchestrator:
                         "ordered": o["date"].strftime("%Y-%m-%d"),
                         "days_ago": o["age_days"],
                         "status": o["status"],
+                        "tracking_status": o["tracking_status"],
                         "total": o["total"],
                         "products": o["products"],
                         "eligible_for_refund": o["eligible"],

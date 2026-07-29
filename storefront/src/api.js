@@ -119,6 +119,10 @@ export function getOrders(customerId) {
   return request(`/orders?customer_id=${customerId}`);
 }
 
+export function getOrder(orderId) {
+  return request(`/orders/${orderId}`);
+}
+
 // --- AI assistant ---
 export function sendChat(message, customerId, history = []) {
   return request("/chat", {

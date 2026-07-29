@@ -139,6 +139,7 @@ class OrderOut(BaseModel):
     id: int
     customer_id: int
     status: str
+    tracking_status: str
     order_date: datetime
     total_amount: float
     items: list[OrderItemOut]

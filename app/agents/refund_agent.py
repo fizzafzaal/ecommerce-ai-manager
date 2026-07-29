@@ -12,6 +12,7 @@ from datetime import datetime
 from app.agents.base_agent import BaseAgent
 from app.database import SessionLocal
 from app.models import Order, Refund
+from app.tracking import tracking_status
 
 REFUND_WINDOW_DAYS = 30
 
@@ -41,6 +42,7 @@ class RefundAgent(BaseAgent):
                         "date": order.order_date,
                         "age_days": age_days,
                         "status": order.status,
+                        "tracking_status": tracking_status(order.status, order.order_date),
                         "total": order.total_amount,
                         "products": [item.product.name for item in order.items],
                         "eligible": order.status == "completed" and age_days <= REFUND_WINDOW_DAYS,

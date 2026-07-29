@@ -24,6 +24,7 @@ from app.database import SessionLocal
 from app.invoice import generate_invoice_png
 from app.invoice_verifier import verify_invoice
 from app.models import CartItem, Customer, Order, OrderItem, Product
+from app.tracking import tracking_status
 from app.orchestrator import Orchestrator
 from app.schemas import (
     CartItemAdd,
@@ -313,6 +314,7 @@ def _to_order_out(order: Order) -> OrderOut:
         id=order.id,
         customer_id=order.customer_id,
         status=order.status,
+        tracking_status=tracking_status(order.status, order.order_date),
         order_date=order.order_date,
         total_amount=order.total_amount,
         items=items,
@@ -420,6 +422,19 @@ def list_orders(customer_id: int) -> list[OrderOut]:
             .all()
         )
         return [_to_order_out(o) for o in orders]
+    finally:
+        db.close()
+
+
+@app.get("/orders/{order_id}", response_model=OrderOut)
+def get_order(order_id: int) -> OrderOut:
+    """Return a single order's full details (for the order detail page)."""
+    db = SessionLocal()
+    try:
+        order = db.get(Order, order_id)
+        if order is None:
+            raise HTTPException(status_code=404, detail="Order not found.")
+        return _to_order_out(order)
     finally:
         db.close()
 
