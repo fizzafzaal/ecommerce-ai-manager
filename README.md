@@ -131,7 +131,11 @@ cd ..
 
 ## Running it
 
-Two processes: the **backend** and the **storefront**.
+**Easiest (Windows):** double-click **`run_demo.bat`** — it starts the backend
+and the storefront and opens your browser. Double-click **`stop_demo.bat`** to
+shut them down.
+
+**Manual** — two processes, the **backend** and the **storefront**:
 
 ```bash
 # Terminal 1 — backend API (http://localhost:8000, docs at /docs)
