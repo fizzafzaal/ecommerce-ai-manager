@@ -28,6 +28,13 @@ class Settings(BaseSettings):
 
     embedding_model: str = "all-MiniLM-L6-v2"
 
+    # Order tracking timing: how long after an order is placed it becomes
+    # "Shipped", then "Delivered". Real elapsed time, so a fresh order
+    # actually progresses. Lower these (e.g. to minutes) to show it moving
+    # during a live demo.
+    ship_after_hours: float = 3.0
+    deliver_after_hours: float = 5.0
+
     # Groq cloud LLM (the "smart" agentic brain). When a key is set, the
     # assistant uses Groq to orchestrate the specialist agents as tools;
     # if it's missing or Groq is unreachable, we fall back to the local

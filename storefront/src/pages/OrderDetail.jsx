@@ -41,6 +41,11 @@ function OrderDetail() {
       <div className="detail-card">
         <h3>Delivery status</h3>
         <TrackingTimeline status={order.tracking_status} />
+        {order.estimated_delivery && (
+          <p className="eta">
+            Estimated delivery: {new Date(order.estimated_delivery).toLocaleString()}
+          </p>
+        )}
       </div>
 
       <div className="detail-card">

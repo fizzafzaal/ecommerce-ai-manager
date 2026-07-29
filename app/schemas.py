@@ -140,6 +140,7 @@ class OrderOut(BaseModel):
     customer_id: int
     status: str
     tracking_status: str
+    estimated_delivery: datetime | None = None
     order_date: datetime
     total_amount: float
     items: list[OrderItemOut]

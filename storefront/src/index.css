@@ -851,6 +851,12 @@ select:focus {
   font-weight: 700;
 }
 
+.eta {
+  margin: 16px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
 .tracking-terminal {
   display: inline-block;
   padding: 6px 14px;

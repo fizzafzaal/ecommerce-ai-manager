@@ -24,7 +24,7 @@ from app.database import SessionLocal
 from app.invoice import generate_invoice_png
 from app.invoice_verifier import verify_invoice
 from app.models import CartItem, Customer, Order, OrderItem, Product
-from app.tracking import tracking_status
+from app.tracking import estimated_delivery, tracking_status
 from app.orchestrator import Orchestrator
 from app.schemas import (
     CartItemAdd,
@@ -315,6 +315,7 @@ def _to_order_out(order: Order) -> OrderOut:
         customer_id=order.customer_id,
         status=order.status,
         tracking_status=tracking_status(order.status, order.order_date),
+        estimated_delivery=estimated_delivery(order.status, order.order_date),
         order_date=order.order_date,
         total_amount=order.total_amount,
         items=items,
