@@ -2,7 +2,14 @@
 // Every page imports these helpers instead of calling fetch() directly,
 // so the API base URL and error handling live in exactly one spot.
 
-const API_BASE = "http://localhost:8000";
+// Where the backend lives:
+//  - In development, the Vite dev server (port 5173) and the API (port 8000)
+//    are separate, so we point at localhost:8000.
+//  - In the production build, the FastAPI backend serves this frontend from
+//    the SAME origin, so we use relative URLs ("") -- no CORS, one domain.
+//  - VITE_API_URL can override both if you ever split them onto two hosts.
+const API_BASE =
+  import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? "http://localhost:8000" : "");
 
 async function request(path, options = {}) {
   const response = await fetch(`${API_BASE}${path}`, {

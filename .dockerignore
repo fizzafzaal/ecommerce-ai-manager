@@ -1,0 +1,32 @@
+# Keep the Docker build context small and never ship local/secret files.
+
+# Python
+venv/
+.venv/
+**/__pycache__/
+*.pyc
+
+# Node / build output (rebuilt inside the image)
+**/node_modules/
+storefront/dist/
+
+# Local data (reseeded inside the image)
+*.db
+chroma_db/
+
+# Secrets & local-only docs
+.env
+CLAUDE.md
+
+# Tooling / VCS
+.git/
+.gitignore
+.claude/
+.streamlit/
+
+# Not needed in the container
+frontend/
+tests/
+*.md
+run_demo.bat
+stop_demo.bat

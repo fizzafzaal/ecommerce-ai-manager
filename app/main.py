@@ -169,7 +169,7 @@ def list_products(category: str | None = None, search: str | None = None) -> lis
         db.close()
 
 
-@app.get("/products/{product_id}", response_model=ProductOut)
+@app.get("/products/{product_id:int}", response_model=ProductOut)
 def get_product(product_id: int) -> ProductOut:
     """Return one product's full details, including live stock."""
     db = SessionLocal()
@@ -492,3 +492,34 @@ def chat(request: ChatRequest) -> ChatResponse:
         # leaking a stack trace to the client.
         logger.exception(f"Unhandled error in /chat: {e}")
         raise HTTPException(status_code=500, detail="Something went wrong processing your message.")
+
+
+# --- Serve the built React storefront (single-service production deploy) ---
+# In development the frontend runs on its own Vite server (port 5173), no build
+# exists, and this whole block is skipped. In production (e.g. on Railway) the
+# Dockerfile builds the frontend into storefront/dist and the backend serves it
+# from the SAME origin -- so there is no CORS and only one service/URL to manage.
+#
+# All the API routes above are registered first, so they always match first.
+# This catch-all only handles what's left: real build files (JS/CSS bundles,
+# product images, favicon) or, for any client-side route, the SPA's index.html.
+import os
+
+from fastapi.responses import FileResponse
+
+_DIST = os.path.abspath(
+    os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "storefront", "dist")
+)
+
+if os.path.isdir(_DIST):
+    _INDEX = os.path.join(_DIST, "index.html")
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    def serve_frontend(full_path: str) -> FileResponse:
+        """Return a real file from the build if it exists, else index.html."""
+        candidate = os.path.abspath(os.path.join(_DIST, full_path))
+        # Path-traversal guard: never serve anything outside the build folder.
+        inside = candidate == _DIST or candidate.startswith(_DIST + os.sep)
+        if full_path and inside and os.path.isfile(candidate):
+            return FileResponse(candidate)
+        return FileResponse(_INDEX)
