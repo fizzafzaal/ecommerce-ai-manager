@@ -11,7 +11,7 @@ Interactive docs are then at http://localhost:8000/docs
 
 from datetime import datetime
 
-from fastapi import FastAPI, HTTPException, Response
+from fastapi import FastAPI, File, HTTPException, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 from sqlalchemy import or_
@@ -22,6 +22,7 @@ from app.agents.product_agent import LOW_STOCK_THRESHOLD
 from app.config import settings
 from app.database import SessionLocal
 from app.invoice import generate_invoice_png
+from app.invoice_verifier import verify_invoice
 from app.models import CartItem, Customer, Order, OrderItem, Product
 from app.orchestrator import Orchestrator
 from app.schemas import (
@@ -34,6 +35,7 @@ from app.schemas import (
     LoginRequest,
     MarketingResponse,
     OrderCreate,
+    VerifyInvoiceResponse,
     OrderItemOut,
     OrderOut,
     ProductOut,
@@ -177,6 +179,17 @@ def get_product(product_id: int) -> ProductOut:
         return _to_product_out(product)
     finally:
         db.close()
+
+
+@app.post("/verify-invoice", response_model=VerifyInvoiceResponse)
+async def verify_invoice_endpoint(file: UploadFile = File(...)) -> VerifyInvoiceResponse:
+    """Verify an uploaded invoice image against the database (Gemini reads
+    the image; Python checks it against the real order)."""
+    image_bytes = await file.read()
+    if not image_bytes:
+        raise HTTPException(status_code=400, detail="No file uploaded.")
+    result = verify_invoice(image_bytes, file.content_type or "image/png")
+    return VerifyInvoiceResponse(**result)
 
 
 @app.post("/products/{product_id}/marketing", response_model=MarketingResponse)

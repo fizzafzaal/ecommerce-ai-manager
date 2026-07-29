@@ -46,6 +46,21 @@ class MarketingResponse(BaseModel):
     marketing_copy: str
 
 
+class VerifiedOrder(BaseModel):
+    order_id: int
+    date: str
+    customer: str
+    items: list[str]
+    total: float
+    order_status: str
+
+
+class VerifyInvoiceResponse(BaseModel):
+    status: str  # verified | not_verified | not_recognized | error
+    message: str
+    order: VerifiedOrder | None = None
+
+
 class ProductOut(BaseModel):
     """A product as shown in the storefront, with live stock."""
 

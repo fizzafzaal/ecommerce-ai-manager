@@ -71,6 +71,25 @@ export function invoiceUrl(orderId) {
   return `${API_BASE}/orders/${orderId}/invoice`;
 }
 
+// Upload an invoice image for verification (multipart form-data, so we
+// don't use the JSON `request` helper here).
+export async function verifyInvoice(file) {
+  const form = new FormData();
+  form.append("file", file);
+  const response = await fetch(`${API_BASE}/verify-invoice`, { method: "POST", body: form });
+  if (!response.ok) {
+    let detail = response.statusText;
+    try {
+      const body = await response.json();
+      detail = body.detail ?? detail;
+    } catch {
+      // no JSON body
+    }
+    throw new Error(typeof detail === "string" ? detail : JSON.stringify(detail));
+  }
+  return response.json();
+}
+
 // --- Cart ---
 export function getCart(customerId) {
   return request(`/cart?customer_id=${customerId}`);

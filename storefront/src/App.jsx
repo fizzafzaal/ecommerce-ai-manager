@@ -10,6 +10,7 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Orders from "./pages/Orders";
 import ProductDetail from "./pages/ProductDetail";
+import VerifyInvoice from "./pages/VerifyInvoice";
 import { useCustomer } from "./context/CustomerContext";
 
 // Wraps pages that require a logged-in customer.
@@ -34,6 +35,7 @@ function App() {
         <Route path="/product/:id" element={<ProductDetail />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/orders" element={<Orders />} />
+        <Route path="/verify" element={<VerifyInvoice />} />
         <Route path="/assistant" element={<Assistant />} />
       </Route>
 

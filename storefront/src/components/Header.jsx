@@ -18,6 +18,7 @@ function Header() {
       <nav className="site-nav">
         <Link to="/">Home</Link>
         <Link to="/orders">My Orders</Link>
+        <Link to="/verify">Verify Invoice</Link>
         <Link to="/assistant">AI Assistant</Link>
         <Link to="/cart" className="cart-link">
           Cart ({count})
