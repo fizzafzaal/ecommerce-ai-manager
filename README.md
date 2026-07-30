@@ -1,5 +1,12 @@
 # ShopSphere — E-Commerce AI Manager
 
+### 🌐 Live demo: **https://ecommerce-ai-manager-production.up.railway.app**
+
+*(Deployed on Railway as a single Docker container. The store, database, and AI
+all run in the cloud — no setup needed to try it.)*
+
+---
+
 A full e-commerce web app with an **agentic AI assistant** built in. Customers
 can sign up, browse a product catalogue with images, add to cart, place orders,
 track deliveries, download invoices, and chat with an AI that can search
@@ -154,6 +161,25 @@ Open **http://localhost:5173**, sign up, and explore.
 - Sign up as yourself → browse → add to cart → checkout → **My Orders** → open an order (tracking timeline) → **Download invoice**.
 - **Verify Invoice** page → upload that invoice → *verified*; edit its total and re-upload → *not verified*; upload any other photo → *not recognized*.
 - **AI Assistant** → "what have I ordered?", "where's my order #5?", "show me warm jackets under $70", "write a playful ad for the air fryer".
+
+---
+
+## Deployment (Railway)
+
+The app is deployed live at
+**https://ecommerce-ai-manager-production.up.railway.app** as a **single Docker
+container** on [Railway](https://railway.com).
+
+- The `Dockerfile` builds the React storefront, installs the Python backend +
+  Tesseract, bakes in the seeded database and search index, and runs the API —
+  which also **serves the frontend from the same origin** (one service, one URL,
+  no CORS).
+- `railway.json` pins the Docker build and a `/health` check.
+- `GROQ_API_KEY` is set as a Railway environment variable (never committed).
+- To redeploy: push to `main` and Railway rebuilds automatically.
+
+> Note: the container's database is baked in at build time, so data resets on
+> each redeploy — fine for a demo. Swap to a managed Postgres for persistence.
 
 ---
 
