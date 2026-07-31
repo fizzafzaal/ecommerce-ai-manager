@@ -1,6 +1,7 @@
 # ShopSphere — E-Commerce AI Manager
 
-### 🌐 Live demo: **https://ecommerce-ai-manager-production.up.railway.app**
+### 🌐 Live app: **https://ecommerce-ai-manager-production.up.railway.app**
+### 🎬 Demo presentation: **https://canva.link/f2xmter7udbpvhw**
 
 *(Deployed on Railway as a single Docker container. The store, database, and AI
 all run in the cloud — no setup needed to try it.)*
